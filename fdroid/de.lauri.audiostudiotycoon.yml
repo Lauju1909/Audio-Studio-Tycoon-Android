@@ -1,0 +1,38 @@
+﻿Categories:
+  - Games
+License: MIT
+AuthorName: Lauju1909
+SourceCode: https://github.com/Lauju1909/Audio-Studio-Tycoon-Android
+IssueTracker: https://github.com/Lauju1909/Audio-Studio-Tycoon-Android/issues
+
+AutoName: Audio Studio Tycoon
+Summary: Tiefgründige Spieleentwickler-Simulation – 100% barrierefrei für Blinde & Sehbehinderte
+Description: |-
+  Audio Studio Tycoon ist eine tiefgründige Wirtschafts- und Spieleentwickler-Simulation,
+  die speziell für blinde, sehbehinderte und sehende Menschen entwickelt wurde.
+
+  Features:
+  - 100% Barrierefreiheit mit TalkBack-Unterstützung
+  - Akustisches Feedback und Sprachausgabe für alle Spielelemente
+  - Gründen und verwalten Sie Ihr eigenes Studio von 1980 bis heute
+  - Forschung, Mitarbeiter, Blockbuster-Produktionen
+  - 100% werbefrei und ohne In-App-Käufe
+
+RepoType: git
+Repo: https://github.com/Lauju1909/Audio-Studio-Tycoon-Android.git
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: v1.0.0
+    subdir: android
+    init:
+      - npm ci
+      - npx cap sync android
+    gradle:
+      - assembleRelease
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '1.0'
+CurrentVersionCode: 1

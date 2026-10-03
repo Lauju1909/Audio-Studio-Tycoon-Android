@@ -1,0 +1,1 @@
+﻿Vollständig barrierefreie Spieleentwickler-Simulation für Android – optimiert für TalkBack.

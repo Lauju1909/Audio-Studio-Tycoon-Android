@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Audio Studio Tycoon - Barrierefreies Studio-Management</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-oled" id="app-body">
+  <div id="sr-announcer" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+  <div id="sr-polite" class="sr-only" aria-live="polite"></div>
+
+  <!-- HEADER -->
+  <header class="app-header" role="banner">
+    <div class="brand">
+      <h1 id="studio-name-display">🎙️ Audio Studio Tycoon</h1>
+      <span class="badge" id="hud-date">Jahr 1980 • Woche 1</span>
+    </div>
+    <div class="header-controls">
+      <button type="button" class="btn-icon" id="btn-toggle-tts" aria-label="Sprachausgabe umschalten" onclick="toggleTTS()">🔊</button>
+      <button type="button" class="btn-icon" aria-label="Spielstand sichern" onclick="saveGamePrompt()">💾</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD / STATUSLEISTE -->
+  <section class="hud-bar" aria-label="Finanz- und Studio-Übersicht">
+    <div class="hud-item" id="hud-cash" aria-label="Guthaben: 50.000 Euro">
+      <span class="hud-label">Guthaben:</span>
+      <span class="hud-val text-green" id="val-cash">50.000 €</span>
+    </div>
+    <div class="hud-item" id="hud-fans" aria-label="Fans: 150">
+      <span class="hud-label">Fans:</span>
+      <span class="hud-val" id="val-fans">150</span>
+    </div>
+    <div class="hud-item" id="hud-rp" aria-label="Forschungspunkte: 10">
+      <span class="hud-label">Forschung:</span>
+      <span class="hud-val text-yellow" id="val-rp">10 FP</span>
+    </div>
+  </section>
+
+  <!-- HAUPTINHALT -->
+  <main id="main-content" class="main-dashboard" role="main">
+
+    <!-- AKTIVES PROJEKT (WENN EIN SPIEL ENTWICKELT WIRD) -->
+    <div id="active-project-card" class="card active-dev-card" style="display: none;" aria-live="polite">
+      <div class="card-header">
+        <h2 id="dev-game-title">Titel des Spiels</h2>
+        <span class="badge badge-dev" id="dev-progress-percent">0%</span>
+      </div>
+      <div class="progress-bar-container" aria-hidden="true">
+        <div class="progress-bar-fill" id="dev-progress-bar" style="width: 0%;"></div>
+      </div>
+      <div class="dev-stats-grid">
+        <div>💡 Features: <strong id="dev-pts-feat">0</strong></div>
+        <div>🎵 Audio-Punkte: <strong id="dev-pts-sound">0</strong></div>
+        <div>🐛 Bugs: <strong id="dev-pts-bugs" class="text-red">0</strong></div>
+      </div>
+      <button type="button" class="btn btn-dev-action" id="btn-finish-dev" onclick="finishDevelopment()" style="display: none;">
+        ✨ Spiel fertigstellen &amp; Veröffentlichen
+      </button>
+    </div>
+
+    <!-- HAUPTAKTIONEN -->
+    <div class="actions-grid">
+      <button type="button" class="action-card card-primary" onclick="openDevModal()">
+        <span class="action-icon">🚀</span>
+        <div class="action-info">
+          <h3>Neues Spiel entwickeln</h3>
+          <p>Thema, Genre, Sound-Engine und Schwerpunkte wählen</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" onclick="openResearchModal()">
+        <span class="action-icon">🔬</span>
+        <div class="action-info">
+          <h3>Forschungslabor</h3>
+          <p>Neue Genres, Audio-Technologien &amp; Plattformen freischalten</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" onclick="openStaffModal()">
+        <span class="action-icon">👥</span>
+        <div class="action-info">
+          <h3>Personal &amp; Team</h3>
+          <p>Sound-Designer, Programmierer &amp; Autoren anheuern</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" onclick="openSoundConModal()">
+        <span class="action-icon">🎪</span>
+        <div class="action-info">
+          <h3>SoundCon Messe</h3>
+          <p>Spielemesse buchen, Hype aufbauen und Fans gewinnen</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" onclick="openLabelModal()">
+        <span class="action-icon">💿</span>
+        <div class="action-info">
+          <h3>Soundtrack-Label</h3>
+          <p>Musikrechte vermarkten &amp; wöchentliche Streaming-Einnahmen</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" onclick="openBankModal()">
+        <span class="action-icon">🏦</span>
+        <div class="action-info">
+          <h3>Bank &amp; Kredite</h3>
+          <p>Kontoführung, Darlehen aufnehmen oder tilgen</p>
+        </div>
+      </button>
+    </div>
+
+    <!-- VERÖFFENTLICHTE SPIELE / HISTORIE -->
+    <section class="history-section" aria-label="Bisherige Veröffentlichungen">
+      <h2 class="section-title">🏆 Bisherige Erfolge</h2>
+      <div id="released-games-list" class="released-list">
+        <p class="empty-hint">Noch kein Spiel veröffentlicht. Starte dein erstes Projekt oben!</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: ENTWICKLUNGS-WIZARD -->
+  <div id="modal-dev" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="dev-modal-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="dev-modal-title">🚀 Neues Spiel konzipieren</h2>
+      
+      <div class="form-group">
+        <label for="input-game-name">Titel deines Spiels:</label>
+        <input type="text" id="input-game-name" value="Echo des Schicksals" placeholder="Titel eingeben...">
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="select-theme">Thema:</label>
+          <select id="select-theme">
+            <option value="Fantasy">Fantasy (Magie &amp; Mythen)</option>
+            <option value="SciFi">Science-Fiction (Weltraum)</option>
+            <option value="Cyberpunk">Cyberpunk (Synthesizer &amp; Neon)</option>
+            <option value="Medieval">Mittelalter (Ritter &amp; Burgen)</option>
+            <option value="Horror">Horror (Düstere Klänge)</option>
+            <option value="Retro">Retro 8-Bit (Chiptune)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-genre">Genre:</label>
+          <select id="select-genre">
+            <option value="RPG">Rollenspiel (RPG)</option>
+            <option value="Action">Action &amp; Abenteuer</option>
+            <option value="Simulation">Simulation</option>
+            <option value="Strategy">Strategie</option>
+            <option value="Puzzle">Rätsel &amp; Logik</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="slider-gameplay">Fokus: Gameplay vs. Story (50 = Ausgeglichen):</label>
+        <input type="range" id="slider-gameplay" min="0" max="100" value="50">
+      </div>
+
+      <div class="form-group">
+        <label for="slider-sound">Fokus: Audio &amp; Klangkulisse (Je höher, desto immersiver):</label>
+        <input type="range" id="slider-sound" min="20" max="100" value="70">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" onclick="startDevelopment()">Entwicklung starten (-5.000 €)</button>
+        <button type="button" class="btn btn-secondary" onclick="closeDevModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FORSCHUNG -->
+  <div id="modal-research" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="research-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="research-title">🔬 Forschung &amp; Audio-Technologie</h2>
+      <div id="research-items-list" class="research-list">
+        <!-- Dynamisch -->
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeResearchModal()">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: SOUNDCON -->
+  <div id="modal-soundcon" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="soundcon-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="soundcon-title">🎪 SoundCon Spielemesse</h2>
+      <p>Präsentiere dein Studio vor tausenden Audio-Gamer-Fans und Vertretern der Fachpresse!</p>
+      <div class="soundcon-options">
+        <button type="button" class="card btn-booth" onclick="attendSoundCon('small')">
+          <strong>Kleiner Stand</strong>
+          <span>Kosten: 2.000 € • +200 Fans</span>
+        </button>
+        <button type="button" class="card btn-booth" onclick="attendSoundCon('medium')">
+          <strong>Mittlerer Stand mit Soundbar</strong>
+          <span>Kosten: 7.500 € • +1.000 Fans</span>
+        </button>
+        <button type="button" class="card btn-booth" onclick="attendSoundCon('keynote')">
+          <strong>Große Keynote-Bühne</strong>
+          <span>Kosten: 20.000 € • +4.000 Fans &amp; Mega-Hype</span>
+        </button>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeSoundConModal()">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: SOUNDTRACK LABEL -->
+  <div id="modal-label" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="label-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="label-title">💿 Dein Soundtrack-Label</h2>
+      <p>Veröffentliche Soundtracks deiner Top-Spiele auf Vinyl, Kassette und Streaming-Plattformen für wöchentliche Tantiemen!</p>
+      <div id="label-releases-list" class="label-list">
+        <!-- Dynamisch -->
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeLabelModal()">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: PERSONAL -->
+  <div id="modal-staff" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="staff-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="staff-title">👥 Personalmanagement</h2>
+      <div class="staff-list">
+        <div class="staff-item">
+          <div>
+            <strong>Audio-Ingenieur (Senior Sound Designer)</strong>
+            <p>Erhöht die Sound-Qualität aller Spiele drastisch.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="hireStaff('sound')">Einstellen (1.500 €/Monat)</button>
+        </div>
+        <div class="staff-item">
+          <div>
+            <strong>Lead Game Programmer</strong>
+            <p>Beschleunigt die Entwicklung und verringert Bugs.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="hireStaff('coder')">Einstellen (1.400 €/Monat)</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeStaffModal()">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: BANK -->
+  <div id="modal-bank" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bank-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="bank-title">🏦 Bank &amp; Kredite</h2>
+      <p>Benötigst du zusätzliches Kapital für Großprojekte?</p>
+      <div class="bank-actions">
+        <button type="button" class="btn btn-primary" onclick="takeLoan(25000)">Kredit aufnehmen (+25.000 €)</button>
+        <button type="button" class="btn btn-primary" onclick="repayLoan(25000)">Kredit tilgen (-25.000 €)</button>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeBankModal()">Schließen</button>
+    </div>
+  </div>
+
+  <script src="audio_engine.js"></script>
+  <script src="tycoon_engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

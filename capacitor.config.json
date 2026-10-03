@@ -1,0 +1,8 @@
+﻿{
+  "appId": "de.lauri.audiostudiotycoon",
+  "appName": "Audio Studio Tycoon",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

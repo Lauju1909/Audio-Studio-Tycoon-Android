@@ -1,0 +1,9 @@
+﻿Audio Studio Tycoon ist eine tiefgründige Wirtschafts- und Spieleentwickler-Simulation, die speziell für blinde, sehbehinderte und sehende Menschen entwickelt wurde.
+
+Features:
+- 100% Barrierefreiheit: Volle Unterstützung für TalkBack und Bildschirmleseprogramme
+- Akustisches Feedback und Sprachausgabe für alle Spielelemente
+- Gründen und verwalten Sie Ihr eigenes Spieleentwicklungsstudio von 1980 bis in die Moderne
+- Erforschen Sie neue Spielkonzepte, Hardware und Gaming-Plattformen
+- Stellen Sie Mitarbeiter ein, leiten Sie Teams und bringen Sie Blockbuster-Hits heraus
+- Vollständig werbefrei und ohne In-App-Käufe

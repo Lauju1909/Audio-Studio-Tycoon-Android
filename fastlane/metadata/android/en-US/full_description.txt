@@ -1,0 +1,9 @@
+﻿Audio Studio Tycoon is an in-depth game development tycoon simulation specifically built from the ground up for blind, visually impaired, and sighted players alike.
+
+Features:
+- 100% Accessibility: Full support for TalkBack and screen readers
+- Comprehensive audio cues, speech synthesis, and tactile feedback
+- Build and manage your video game development studio from 1980 through modern eras
+- Research innovative gaming tech, custom engines, and platforms
+- Hire staff, manage burnout, market releases, and conquer the charts
+- Completely ad-free, tracker-free, and open source
