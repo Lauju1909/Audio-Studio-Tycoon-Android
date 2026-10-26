@@ -24,6 +24,7 @@
     <div class="header-controls">
       <button type="button" class="btn-icon" id="btn-toggle-lang" aria-label="Sprache umschalten" onclick="toggleLanguage()" title="Sprache / Language">🇩🇪 DE</button>
       <button type="button" class="btn-icon" id="btn-toggle-tts" aria-label="Sprachausgabe umschalten" onclick="toggleTTS()" title="TTS Vorlesen">🔊</button>
+      <button type="button" class="btn-icon" aria-label="Feedback an Lauju senden" onclick="openFeedbackModal()" title="Feedback">💬</button>
       <button type="button" class="btn-icon" aria-label="Spielstand sichern" onclick="saveGamePrompt()" title="Speichern">💾</button>
       <button type="button" class="btn-icon" aria-label="Neustart" onclick="resetGame()" title="Reset" style="color: var(--red);">🔄</button>
     </div>
@@ -381,6 +382,31 @@
   </div>
 
   <!-- MODAL: HISTORISCHER ABSCHLUSS (GAME OVER / 1930-2026) -->
+  <!-- MODAL: FEEDBACK -->
+  <div id="modal-feedback" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedback-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="feedback-title">💬 Feedback & Ideen senden</h2>
+      <p style="font-size: 0.9rem; color: #a0aec0; margin: 0;">Dein Feedback landet direkt bei Entwickler Lauju in der Feedback-Zentrale.</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+        <label for="fb-sender">Dein Name / Alias (optional):</label>
+        <input type="text" id="fb-sender" style="padding: 10px; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px;" placeholder="z. B. Alex oder Anonym">
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+        <label for="fb-text">Deine Nachricht / Fehlerbericht / Feature-Wunsch:</label>
+        <textarea id="fb-text" rows="4" style="padding: 10px; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; resize: vertical; font-family: inherit;" placeholder="Was gefällt dir? Was sollen wir als Nächstes einbauen?"></textarea>
+      </div>
+
+      <div id="fb-status" aria-live="polite" style="min-height: 24px; font-weight: bold; font-size: 0.95rem; margin-top: 8px;"></div>
+
+      <div class="modal-actions" style="margin-top: 14px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-primary" style="flex: 2;" onclick="sendTycoonFeedback()">📤 Absenden</button>
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeFeedbackModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-game-over" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="game-over-title" style="display: none;">
     <div class="modal-card" style="border-color: var(--accent); background: #0f172a;">
       <h2 id="game-over-title" style="color: var(--accent);">🏆 Historische Ära Vollendet (1930–2026)!</h2>
