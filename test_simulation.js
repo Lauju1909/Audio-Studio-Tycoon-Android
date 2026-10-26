@@ -3,9 +3,10 @@ const fs = require('fs');
 
 // Mock browser globals
 global.window = global;
+const mockElements = {};
 global.document = {
   addEventListener: () => {},
-  querySelectorAll: () => [],
+  querySelectorAll: () => Object.values(mockElements),
   createElement: (tag) => ({
     style: {},
     textContent: '',
@@ -14,14 +15,21 @@ global.document = {
     appendChild: () => {},
     setAttribute: () => {}
   }),
-  getElementById: (id) => ({
-    style: {},
-    textContent: '',
-    value: '',
-    innerHTML: '',
-    appendChild: () => {},
-    setAttribute: () => {}
-  })
+  getElementById: (id) => {
+    if (!mockElements[id]) {
+      mockElements[id] = {
+        id,
+        style: {},
+        textContent: '',
+        value: '',
+        innerHTML: '',
+        appendChild: () => {},
+        setAttribute: () => {},
+        getAttribute: () => null
+      };
+    }
+    return mockElements[id];
+  }
 };
 global.localStorage = {
   data: {},
@@ -151,4 +159,64 @@ assert.strictEqual(StudioState.language, "en");
 assert.strictEqual(t("app_title"), "Audio Studio Tycoon");
 assert.strictEqual(t("new_game"), "Develop New Game");
 
-console.log("\nALL 9 SIMULATION INTEGRATION TESTS PASSED 100%!");
+console.log("=== TEST 10: Marketing Campaigns & Decay ===");
+StudioState.cash = 50000;
+const fansBeforeCampaign = StudioState.fans;
+startMarketingCampaign('streamer');
+assert.strictEqual(StudioState.cash, 30000, "Streamer marketing costs 20,000 EUR");
+assert.strictEqual(StudioState.fans, fansBeforeCampaign + 2500, "Streamer marketing gains 2500 fans");
+assert.strictEqual(StudioState.marketingCampaign.weeksLeft, 16);
+// Weekly tick should decay marketing campaign
+tickWeek();
+assert.strictEqual(StudioState.marketingCampaign.weeksLeft, 15);
+
+console.log("=== TEST 11: SoundCon Expo Attendance ===");
+StudioState.cash = 100000;
+const fansBeforeCon = StudioState.fans;
+attendSoundCon('keynote');
+assert.strictEqual(StudioState.cash, 75000, "Keynote booth costs 25,000 EUR");
+assert.strictEqual(StudioState.fans, fansBeforeCon + 5000, "Keynote booth gains 5,000 fans");
+
+console.log("=== TEST 12: Annual GOTY Awards ===");
+StudioState.releasedGames.push({
+  title: "Masterpiece Odyssey",
+  year: StudioState.year,
+  score: 100,
+  revenue: 250000
+});
+// Roll over to new year (week 52 -> week 1 of next year)
+StudioState.week = 52;
+const cashBeforeAward = StudioState.cash;
+tickWeek();
+assert.strictEqual(StudioState.week, 1);
+assert.strictEqual(StudioState.gotyAwards.length, 1, "Top scored title should win GOTY award");
+assert.strictEqual(StudioState.gotyAwards[0].title, "Masterpiece Odyssey");
+assert(StudioState.cash > cashBeforeAward + 45000, "GOTY award provides 50k bonus (plus royalties minus payroll)");
+
+console.log("=== TEST 13: Staff Hiring and Termination ===");
+global.confirm = () => true;
+const staffCountBefore = StudioState.staff.length;
+hireNewCandidate('coder');
+assert.strictEqual(StudioState.staff.length, staffCountBefore + 1, "Staff count should increment on hire");
+const hiredEmp = StudioState.staff[StudioState.staff.length - 1];
+assert.strictEqual(hiredEmp.role, 'coder');
+assert.strictEqual(hiredEmp.salary, 1500);
+fireStaff(hiredEmp.id);
+assert.strictEqual(StudioState.staff.length, staffCountBefore, "Staff count should decrement on fire");
+
+console.log("=== TEST 14: EventBus PubSub & Modals ===");
+let eventFired = false;
+EventBus.on('test:ping', (payload) => {
+  if (payload === 'pong') eventFired = true;
+});
+EventBus.emit('test:ping', 'pong');
+assert.strictEqual(eventFired, true, "EventBus should properly deliver events to listeners");
+
+openBankModal();
+const modalBank = document.getElementById('modal-bank');
+assert.strictEqual(modalBank.style.display, 'flex');
+closeBankModal();
+assert.strictEqual(modalBank.style.display, 'none');
+
+console.log("\nALL 14 SIMULATION INTEGRATION TESTS PASSED 100%!");
+
