@@ -7,34 +7,40 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="theme-oled" id="app-body">
+  <!-- Screenreader Live Regions -->
   <div id="sr-announcer" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
   <div id="sr-polite" class="sr-only" aria-live="polite"></div>
 
   <!-- HEADER -->
   <header class="app-header" role="banner">
     <div class="brand">
-      <h1 id="studio-name-display">🎙️ Audio Studio Tycoon</h1>
-      <span class="badge" id="hud-date">Jahr 1980 • Woche 1</span>
+      <h1 id="studio-name-display" data-i18n="app_title">🎙️ Audio Studio Tycoon</h1>
+      <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <span class="badge" id="hud-date">Jahr 1980 • Woche 1</span>
+        <span class="badge text-red" id="hud-debt-badge" style="display: none; background: rgba(239, 68, 68, 0.15); border-color: var(--red);">Schulden: 0 €</span>
+      </div>
     </div>
     <div class="header-controls">
-      <button type="button" class="btn-icon" id="btn-toggle-tts" aria-label="Sprachausgabe umschalten" onclick="toggleTTS()">🔊</button>
-      <button type="button" class="btn-icon" aria-label="Spielstand sichern" onclick="saveGamePrompt()">💾</button>
+      <button type="button" class="btn-icon" id="btn-toggle-lang" aria-label="Sprache umschalten" onclick="toggleLanguage()" title="Sprache / Language">🇩🇪 DE</button>
+      <button type="button" class="btn-icon" id="btn-toggle-tts" aria-label="Sprachausgabe umschalten" onclick="toggleTTS()" title="TTS Vorlesen">🔊</button>
+      <button type="button" class="btn-icon" aria-label="Spielstand sichern" onclick="saveGamePrompt()" title="Speichern">💾</button>
+      <button type="button" class="btn-icon" aria-label="Neustart" onclick="resetGame()" title="Reset" style="color: var(--red);">🔄</button>
     </div>
   </header>
 
   <!-- DASHBOARD / STATUSLEISTE -->
   <section class="hud-bar" aria-label="Finanz- und Studio-Übersicht">
-    <div class="hud-item" id="hud-cash" aria-label="Guthaben: 50.000 Euro">
-      <span class="hud-label">Guthaben:</span>
+    <div class="hud-item" id="hud-cash">
+      <span class="hud-label" data-i18n="cash_label">Guthaben:</span>
       <span class="hud-val text-green" id="val-cash">50.000 €</span>
     </div>
-    <div class="hud-item" id="hud-fans" aria-label="Fans: 150">
-      <span class="hud-label">Fans:</span>
+    <div class="hud-item" id="hud-fans">
+      <span class="hud-label" data-i18n="fans_label">Fans:</span>
       <span class="hud-val" id="val-fans">150</span>
     </div>
-    <div class="hud-item" id="hud-rp" aria-label="Forschungspunkte: 10">
-      <span class="hud-label">Forschung:</span>
-      <span class="hud-val text-yellow" id="val-rp">10 FP</span>
+    <div class="hud-item" id="hud-rp">
+      <span class="hud-label" data-i18n="rp_label">Forschung:</span>
+      <span class="hud-val text-yellow" id="val-rp">15 FP</span>
     </div>
   </section>
 
@@ -65,57 +71,73 @@
       <button type="button" class="action-card card-primary" onclick="openDevModal()">
         <span class="action-icon">🚀</span>
         <div class="action-info">
-          <h3>Neues Spiel entwickeln</h3>
-          <p>Thema, Genre, Sound-Engine und Schwerpunkte wählen</p>
+          <h3 data-i18n="new_game">Neues Spiel entwickeln</h3>
+          <p data-i18n="new_game_desc">Thema, Genre, Sound-Engine und Schwerpunkte wählen</p>
         </div>
       </button>
 
       <button type="button" class="action-card" onclick="openResearchModal()">
         <span class="action-icon">🔬</span>
         <div class="action-info">
-          <h3>Forschungslabor</h3>
-          <p>Neue Genres, Audio-Technologien &amp; Plattformen freischalten</p>
+          <h3 data-i18n="research">Forschungslabor</h3>
+          <p data-i18n="research_desc">Neue Genres, Audio-Technologien &amp; Plattformen freischalten</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" onclick="openEngineModal()">
+        <span class="action-icon">⚙️</span>
+        <div class="action-info">
+          <h3 data-i18n="custom_engine">Engine-Werkstatt</h3>
+          <p data-i18n="custom_engine_desc">Eigene Sound-Engines für Projekte bauen</p>
         </div>
       </button>
 
       <button type="button" class="action-card" onclick="openStaffModal()">
         <span class="action-icon">👥</span>
         <div class="action-info">
-          <h3>Personal &amp; Team</h3>
-          <p>Sound-Designer, Programmierer &amp; Autoren anheuern</p>
+          <h3 data-i18n="staff">Personal &amp; Team</h3>
+          <p data-i18n="staff_desc">Audio-Designer, Programmierer anheuern &amp; Urlaub verwalten</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" onclick="openMarketingModal()">
+        <span class="action-icon">📢</span>
+        <div class="action-info">
+          <h3 data-i18n="marketing">Marketing &amp; Hype</h3>
+          <p data-i18n="marketing_desc">Kampagnen starten und Bekanntheit steigern</p>
         </div>
       </button>
 
       <button type="button" class="action-card" onclick="openSoundConModal()">
         <span class="action-icon">🎪</span>
         <div class="action-info">
-          <h3>SoundCon Messe</h3>
-          <p>Spielemesse buchen, Hype aufbauen und Fans gewinnen</p>
+          <h3 data-i18n="soundcon">SoundCon Messe</h3>
+          <p data-i18n="soundcon_desc">Spielemesse buchen, Hype aufbauen und Fans gewinnen</p>
         </div>
       </button>
 
       <button type="button" class="action-card" onclick="openLabelModal()">
         <span class="action-icon">💿</span>
         <div class="action-info">
-          <h3>Soundtrack-Label</h3>
-          <p>Musikrechte vermarkten &amp; wöchentliche Streaming-Einnahmen</p>
+          <h3 data-i18n="label">Soundtrack-Label</h3>
+          <p data-i18n="label_desc">Musikrechte vermarkten &amp; wöchentliche Streaming-Einnahmen</p>
         </div>
       </button>
 
       <button type="button" class="action-card" onclick="openBankModal()">
         <span class="action-icon">🏦</span>
         <div class="action-info">
-          <h3>Bank &amp; Kredite</h3>
-          <p>Kontoführung, Darlehen aufnehmen oder tilgen</p>
+          <h3 data-i18n="bank">Bank &amp; Kredite</h3>
+          <p data-i18n="bank_desc">Kontoführung, Darlehen aufnehmen oder tilgen</p>
         </div>
       </button>
     </div>
 
     <!-- VERÖFFENTLICHTE SPIELE / HISTORIE -->
     <section class="history-section" aria-label="Bisherige Veröffentlichungen">
-      <h2 class="section-title">🏆 Bisherige Erfolge</h2>
+      <h2 class="section-title" data-i18n="achievements">🏆 Bisherige Erfolge</h2>
       <div id="released-games-list" class="released-list">
-        <p class="empty-hint">Noch kein Spiel veröffentlicht. Starte dein erstes Projekt oben!</p>
+        <p class="empty-hint" data-i18n="no_games_yet">Noch kein Spiel veröffentlicht. Starte dein erstes Projekt oben!</p>
       </div>
     </section>
   </main>
@@ -127,7 +149,10 @@
       
       <div class="form-group">
         <label for="input-game-name">Titel deines Spiels:</label>
-        <input type="text" id="input-game-name" value="Echo des Schicksals" placeholder="Titel eingeben...">
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-game-name" value="Echo des Schicksals" placeholder="Titel eingeben..." style="flex: 1;">
+          <button type="button" class="btn btn-secondary" onclick="generateRandomTitle()" title="Zufälliger Titel">🎲</button>
+        </div>
       </div>
 
       <div class="form-grid">
@@ -156,12 +181,26 @@
       </div>
 
       <div class="form-group">
+        <label for="select-engine">Audio-Engine wählen:</label>
+        <select id="select-engine">
+          <!-- Dynamisch -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Zugewiesenes Team:</label>
+        <div id="dev-staff-selection" class="staff-checkbox-list">
+          <!-- Dynamisch -->
+        </div>
+      </div>
+
+      <div class="form-group">
         <label for="slider-gameplay">Fokus: Gameplay vs. Story (50 = Ausgeglichen):</label>
         <input type="range" id="slider-gameplay" min="0" max="100" value="50">
       </div>
 
       <div class="form-group">
-        <label for="slider-sound">Fokus: Audio &amp; Klangkulisse (Je höher, desto immersiver):</label>
+        <label for="slider-sound">Fokus: Audio &amp; Klangkulisse (Höher = Immersiver):</label>
         <input type="range" id="slider-sound" min="20" max="100" value="70">
       </div>
 
@@ -176,10 +215,69 @@
   <div id="modal-research" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="research-title" style="display: none;">
     <div class="modal-card">
       <h2 id="research-title">🔬 Forschung &amp; Audio-Technologie</h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;">Erforsche revolutionäre Sound-Technologien, um Wertungen zu maximieren und neue Engines zu bauen.</p>
       <div id="research-items-list" class="research-list">
         <!-- Dynamisch -->
       </div>
-      <button type="button" class="btn btn-secondary" onclick="closeResearchModal()">Schließen</button>
+      <button type="button" class="btn btn-secondary" onclick="closeResearchModal()" style="margin-top: 12px;">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: ENGINE WERKSTATT -->
+  <div id="modal-engine" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="engine-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="engine-title">⚙️ Sound-Engine Werkstatt</h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;">Baue moderne proprietäre Sound-Engines, die all deine erforschten Audio-Features bündeln.</p>
+      <div id="engine-list-display">
+        <!-- Dynamisch -->
+      </div>
+      <div class="modal-actions" style="margin-top: 12px;">
+        <button type="button" class="btn btn-primary" onclick="buildNewEngine()">Neue Engine entwickeln (-15.000 €)</button>
+        <button type="button" class="btn btn-secondary" onclick="closeEngineModal()">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PERSONAL & TEAM -->
+  <div id="modal-staff" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="staff-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="staff-title">👥 Personalmanagement &amp; Erholung</h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;">Erschöpfte Mitarbeiter machen Fehler. Schicke gestresste Entwickler in den Urlaub!</p>
+      <div id="current-staff-list" class="staff-list">
+        <!-- Dynamisch -->
+      </div>
+      <div style="margin-top: 16px; border-top: 1px solid var(--card-border); padding-top: 12px;">
+        <h3 style="font-size: 1rem; margin-bottom: 8px;">Kandidaten anheuern:</h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="hireNewCandidate('sound')">+ Audio-Designer</button>
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="hireNewCandidate('coder')">+ Programmierer</button>
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="hireNewCandidate('writer')">+ Story-Autor</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeStaffModal()" style="margin-top: 16px;">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: MARKETING & HYPE -->
+  <div id="modal-marketing" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="marketing-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="marketing-title">📢 Marketing &amp; Kampagnen</h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;">Erhöhe den Hype vor dem Launch, um Verkaufserlöse und Fan-Zahlen drastisch zu steigern!</p>
+      <div class="soundcon-options">
+        <button type="button" class="card btn-booth" onclick="startMarketingCampaign('flyer')">
+          <strong>Lokale Flyer &amp; Soundcloud-Teaser</strong>
+          <span>Kosten: 3.000 € • +25 Hype • +150 Fans</span>
+        </button>
+        <button type="button" class="card btn-booth" onclick="startMarketingCampaign('radio')">
+          <strong>Radio- &amp; Podcast-Werbung</strong>
+          <span>Kosten: 8.000 € • +50 Hype • +600 Fans</span>
+        </button>
+        <button type="button" class="card btn-booth" onclick="startMarketingCampaign('streamer')">
+          <strong>Gamer-Streamer &amp; Influencer Showcase</strong>
+          <span>Kosten: 20.000 € • +90 Hype • +2.500 Fans</span>
+        </button>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeMarketingModal()">Schließen</button>
     </div>
   </div>
 
@@ -191,15 +289,15 @@
       <div class="soundcon-options">
         <button type="button" class="card btn-booth" onclick="attendSoundCon('small')">
           <strong>Kleiner Stand</strong>
-          <span>Kosten: 2.000 € • +200 Fans</span>
+          <span>Kosten: 2.500 € • +250 Fans</span>
         </button>
         <button type="button" class="card btn-booth" onclick="attendSoundCon('medium')">
           <strong>Mittlerer Stand mit Soundbar</strong>
-          <span>Kosten: 7.500 € • +1.000 Fans</span>
+          <span>Kosten: 8.500 € • +1.200 Fans</span>
         </button>
         <button type="button" class="card btn-booth" onclick="attendSoundCon('keynote')">
           <strong>Große Keynote-Bühne</strong>
-          <span>Kosten: 20.000 € • +4.000 Fans &amp; Mega-Hype</span>
+          <span>Kosten: 25.000 € • +5.000 Fans &amp; Mega-Hype</span>
         </button>
       </div>
       <button type="button" class="btn btn-secondary" onclick="closeSoundConModal()">Schließen</button>
@@ -218,44 +316,32 @@
     </div>
   </div>
 
-  <!-- MODAL: PERSONAL -->
-  <div id="modal-staff" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="staff-title" style="display: none;">
-    <div class="modal-card">
-      <h2 id="staff-title">👥 Personalmanagement</h2>
-      <div class="staff-list">
-        <div class="staff-item">
-          <div>
-            <strong>Audio-Ingenieur (Senior Sound Designer)</strong>
-            <p>Erhöht die Sound-Qualität aller Spiele drastisch.</p>
-          </div>
-          <button type="button" class="btn btn-primary" onclick="hireStaff('sound')">Einstellen (1.500 €/Monat)</button>
-        </div>
-        <div class="staff-item">
-          <div>
-            <strong>Lead Game Programmer</strong>
-            <p>Beschleunigt die Entwicklung und verringert Bugs.</p>
-          </div>
-          <button type="button" class="btn btn-primary" onclick="hireStaff('coder')">Einstellen (1.400 €/Monat)</button>
-        </div>
-      </div>
-      <button type="button" class="btn btn-secondary" onclick="closeStaffModal()">Schließen</button>
-    </div>
-  </div>
-
   <!-- MODAL: BANK -->
   <div id="modal-bank" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bank-title" style="display: none;">
     <div class="modal-card">
-      <h2 id="bank-title">🏦 Bank &amp; Kredite</h2>
-      <p>Benötigst du zusätzliches Kapital für Großprojekte?</p>
-      <div class="bank-actions">
-        <button type="button" class="btn btn-primary" onclick="takeLoan(25000)">Kredit aufnehmen (+25.000 €)</button>
-        <button type="button" class="btn btn-primary" onclick="repayLoan(25000)">Kredit tilgen (-25.000 €)</button>
+      <h2 id="bank-title">🏦 Bank &amp; Kreditfinanzierung</h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">Kredite sichern dir Liquidität für Großproduktionen. Tilge Schulden rechtzeitig, um Zinskosten zu senken.</p>
+      <div id="bank-debt-info">
+        <!-- Dynamisch -->
       </div>
-      <button type="button" class="btn btn-secondary" onclick="closeBankModal()">Schließen</button>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="takeLoan(10000)">+10.000 € leihen</button>
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="takeLoan(25000)">+25.000 € leihen</button>
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="takeLoan(50000)">+50.000 € leihen</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="repayLoan(10000)">-10.000 € tilgen</button>
+          <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="repayLoan(25000)">-25.000 € tilgen</button>
+          <button type="button" class="btn btn-secondary" style="flex: 1; border-color: var(--green); color: var(--green);" onclick="repayAllLoans()">Alles tilgen</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeBankModal()" style="margin-top: 14px;">Schließen</button>
     </div>
   </div>
 
   <script src="audio_engine.js"></script>
+  <script src="sound.js"></script>
   <script src="tycoon_engine.js"></script>
   <script src="app.js"></script>
 </body>
