@@ -4,7 +4,18 @@
 
 function createDefaultState(startYear = 1930) {
   const initYear = (typeof START_YEAR !== 'undefined') ? START_YEAR : (startYear || 1930);
-  return {
+
+  const initPlatforms = (typeof getAvailablePlatforms === 'function')
+    ? getAvailablePlatforms(initYear).map(p => p.name)
+    : ["Hand-Abakus"];
+
+  const baseThemes = ["Fantasy", "SciFi", "Cyberpunk", "Medieval", "Horror", "Retro"];
+  const histTopics = (typeof getAvailableTopics === 'function')
+    ? getAvailableTopics(initYear).map(t => t.name)
+    : ["Abakus", "Radio-Drama", "Stummfilm", "Logistik", "Schach", "Mathematik"];
+  const initTopics = Array.from(new Set([...baseThemes, ...histTopics]));
+
+  const state = {
     studioName: "Audio Wave Studios",
     year: initYear,
     week: 1,
@@ -17,8 +28,9 @@ function createDefaultState(startYear = 1930) {
     language: "de",
     unlockedTech: [],
     unlockedFeatures: [],
-    unlockedPlatforms: [],
-    unlockedTopics: [],
+    unlockedPlatforms: initPlatforms,
+    unlockedGenres: ["Action", "Puzzle", "Casual", "Simulation", "Strategy"],
+    unlockedTopics: initTopics,
     salesMultiplier: 1.0,
     hypeMultiplier: 1.0,
     hype: 50,
@@ -26,6 +38,9 @@ function createDefaultState(startYear = 1930) {
     taxRate: 0.1,
     logicMultiplier: 1.0,
     devSpeedMultiplier: 1.0,
+    salaryMultiplier: 1.0,
+    devCostMultiplier: 1.0,
+    serverCosts: 0,
     marketingEfficiency: 1.0,
     streamerHypeMulti: 1.0,
     subscriptionMulti: 1.0,
@@ -45,8 +60,31 @@ function createDefaultState(startYear = 1930) {
     gotyAwards: [],
     isTimerRunning: true,
     isPaused: false,
+    isGameOver: false,
+    endlessMode: false,
     timerInterval: null // Runtime only, NEVER serialized to localStorage
   };
+
+  // Apply initial startYear historical event
+  const initEvent = (typeof getYearEvent === 'function')
+    ? getYearEvent(initYear)
+    : ((typeof YEAR_EVENTS !== 'undefined') ? YEAR_EVENTS[initYear] : null);
+
+  if (initEvent) {
+    if (initEvent.effect === 'sales_multi' || initEvent.effect === 'money_multi') {
+      state.salesMultiplier = initEvent.value;
+    } else if (initEvent.effect === 'rp') {
+      state.rp += initEvent.value;
+    }
+    state.eventLog.push({
+      year: initYear,
+      text: initEvent.text,
+      effect: initEvent.effect,
+      value: initEvent.value
+    });
+  }
+
+  return state;
 }
 
 const StudioState = (typeof window !== 'undefined' && window.StudioState) ? window.StudioState : createDefaultState();

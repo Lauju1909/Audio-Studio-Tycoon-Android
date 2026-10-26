@@ -29,9 +29,29 @@ function handleAnnualAwards() {
 }
 
 function startMarketingCampaign(type) {
+  if (type === 'streamer') {
+    const isUnlocked = (typeof isFeatureUnlocked === 'function')
+      ? isFeatureUnlocked('creator_sponsorship', StudioState.year)
+      : (StudioState.year >= 2010);
+    if (!isUnlocked) {
+      if (typeof AudioEngine !== 'undefined') {
+        AudioEngine.playSound('error');
+        AudioEngine.speak(t('feature_locked', { feature: 'Content Creators & Streamer', year: 2010 }));
+      }
+      return;
+    }
+  }
+
   let cost = 3000, hype = 25, weeks = 8, fans = 150;
   if (type === 'radio') { cost = 8000; hype = 50; weeks = 12; fans = 600; }
   if (type === 'streamer') { cost = 20000; hype = 90; weeks = 16; fans = 2500; }
+
+  let efficiency = StudioState.marketingEfficiency || 1.0;
+  if (type === 'streamer') {
+    efficiency *= (StudioState.streamerHypeMulti || 1.0);
+  }
+  hype = Math.round(hype * efficiency);
+  fans = Math.round(fans * efficiency);
 
   if (StudioState.cash < cost) {
     if (typeof AudioEngine !== 'undefined') {
@@ -61,6 +81,17 @@ function startMarketingCampaign(type) {
 }
 
 function attendSoundCon(tier) {
+  const isUnlocked = (typeof isFeatureUnlocked === 'function')
+    ? isFeatureUnlocked('soundcon', StudioState.year)
+    : (StudioState.year >= 1995);
+  if (!isUnlocked) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('feature_locked', { feature: 'SoundCon', year: 1995 }));
+    }
+    return;
+  }
+
   let cost = 2500, fans = 250;
   if (tier === 'medium') { cost = 8500; fans = 1200; }
   if (tier === 'keynote') { cost = 25000; fans = 5000; }

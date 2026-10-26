@@ -111,6 +111,31 @@ function processAnnualTransition() {
           StudioState.unlockedGenres.push(val);
         }
         break;
+      case 'salary_increase':
+        StudioState.salaryMultiplier = (StudioState.salaryMultiplier || 1.0) * (1 + (val > 1 ? val - 1 : val));
+        break;
+      case 'cost_increase':
+        StudioState.devCostMultiplier = (StudioState.devCostMultiplier || 1.0) * (1 + (val > 1 ? val - 1 : val));
+        break;
+      case 'quality_penalty':
+        StudioState.qualityStandardMulti = (StudioState.qualityStandardMulti || 1.0) * Math.max(0.2, (1 - Math.abs(val)));
+        break;
+      case 'medium_upgrade':
+        StudioState.salesMultiplier = (StudioState.salesMultiplier || 1.0) * 1.25;
+        break;
+      case 'market_shift':
+      case 'rival_boost':
+        StudioState.salesMultiplier = (StudioState.salesMultiplier || 1.0) * (val || 1.0);
+        break;
+      case 'server_costs':
+        StudioState.serverCosts = (StudioState.serverCosts || 0) + Math.round(val * 100);
+        break;
+      case 'crypto_crash':
+        StudioState.hype = Math.max(0, (StudioState.hype || 50) - 35);
+        break;
+      case 'censorship_risk':
+        StudioState.hypeMultiplier = (StudioState.hypeMultiplier || 1.0) * Math.max(0.5, (1 - (val > 1 ? val / 10 : val * 0.2)));
+        break;
       case 'unlock_platform':
         if (typeof PLATFORMS !== 'undefined') {
           const match = PLATFORMS.find(p => p.name.toLowerCase().includes(String(val).toLowerCase()));
@@ -122,6 +147,9 @@ function processAnnualTransition() {
       case 'game_end':
         StudioState.isGameOver = true;
         StudioState.gameOverReason = "historical_end";
+        if (typeof showGameOverModal === 'function') {
+          showGameOverModal();
+        }
         break;
     }
 
@@ -166,6 +194,9 @@ function processAnnualTransition() {
   if (typeof getNewlyRetiredPlatforms === 'function') {
     const retiredPlats = getNewlyRetiredPlatforms(currentYear);
     retiredPlats.forEach(plat => {
+      if (StudioState.unlockedPlatforms) {
+        StudioState.unlockedPlatforms = StudioState.unlockedPlatforms.filter(name => name !== plat.name);
+      }
       if (typeof AudioEngine !== 'undefined') {
         AudioEngine.speak(t('platform_retired', { name: plat.name }));
       }
@@ -204,6 +235,10 @@ function processAnnualTransition() {
 }
 
 function tickWeek() {
+  if (StudioState.isGameOver && !StudioState.endlessMode) {
+    return;
+  }
+
   StudioState.week++;
   const weeksInYear = StudioState.weeksPerYear || 48;
   if (StudioState.week > weeksInYear) {
@@ -234,8 +269,9 @@ function tickWeek() {
   // 2. Staff Payroll & Vacation Recovery
   let totalSalaries = 0;
   if (StudioState.staff) {
+    const salaryMulti = StudioState.salaryMultiplier || 1.0;
     StudioState.staff.forEach(emp => {
-      totalSalaries += Math.round(emp.salary / 4);
+      totalSalaries += Math.round((emp.salary * salaryMulti) / 4);
 
       if (emp.onVacationWeeks > 0) {
         emp.onVacationWeeks--;
@@ -250,6 +286,11 @@ function tickWeek() {
 
   if (totalSalaries > 0) {
     StudioState.cash -= totalSalaries;
+  }
+
+  // Server maintenance expenses
+  if (StudioState.serverCosts > 0) {
+    StudioState.cash -= StudioState.serverCosts;
   }
 
   // 3. Weekly Loan Interest

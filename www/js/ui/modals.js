@@ -19,8 +19,40 @@ function openDevModal() {
     return;
   }
 
+  const themeSelect = document.getElementById('select-theme');
+  if (themeSelect) {
+    themeSelect.innerHTML = '';
+    const unlockedThemes = StudioState.unlockedTopics && StudioState.unlockedTopics.length > 0
+      ? StudioState.unlockedTopics
+      : ["Fantasy", "SciFi", "Cyberpunk", "Medieval", "Horror", "Retro"];
+    unlockedThemes.forEach(themeName => {
+      const opt = document.createElement('option');
+      opt.value = themeName;
+      const histTopic = (typeof HISTORICAL_TOPICS !== 'undefined') ? HISTORICAL_TOPICS.find(t => t.name === themeName) : null;
+      const extraInfo = histTopic ? ` (${histTopic.synergy ? `Synergie: ${histTopic.synergy}` : ''}${histTopic.hype_level ? ` • Hype: ★${histTopic.hype_level}` : ''})` : '';
+      opt.textContent = `${themeName}${extraInfo}`;
+      themeSelect.appendChild(opt);
+    });
+  }
+
+  const genreSelect = document.getElementById('select-genre');
+  if (genreSelect) {
+    const unlockedGenres = StudioState.unlockedGenres && StudioState.unlockedGenres.length > 0
+      ? StudioState.unlockedGenres
+      : ["RPG", "Action", "Simulation", "Strategy", "Puzzle"];
+    genreSelect.innerHTML = '';
+    unlockedGenres.forEach(genreName => {
+      const opt = document.createElement('option');
+      opt.value = genreName;
+      opt.textContent = genreName;
+      genreSelect.appendChild(opt);
+    });
+  }
+
   const platformSelect = document.getElementById('select-platform');
-  const availablePlats = (typeof getAvailablePlatforms === 'function') ? getAvailablePlatforms(StudioState.year) : (typeof PLATFORMS !== 'undefined' ? PLATFORMS : []);
+  const availablePlats = (typeof getAvailablePlatforms === 'function')
+    ? getAvailablePlatforms(StudioState.year, StudioState.unlockedPlatforms)
+    : (typeof PLATFORMS !== 'undefined' ? PLATFORMS : []);
   if (platformSelect) {
     platformSelect.innerHTML = '';
     availablePlats.forEach(plat => {
@@ -34,9 +66,10 @@ function openDevModal() {
     const updateDevCostBtn = () => {
       const curPlat = availablePlats.find(p => p.name === platformSelect.value) || availablePlats[0];
       const fee = curPlat ? (curPlat.license_fee || 0) : 0;
+      const baseCost = Math.round(5000 * (StudioState.devCostMultiplier || 1.0));
       const submitBtn = document.getElementById('btn-submit-dev');
       if (submitBtn) {
-        submitBtn.textContent = `${StudioState.language === 'en' ? 'Start Development' : 'Entwicklung starten'} (-${formatMoney(5000 + fee)})`;
+        submitBtn.textContent = `${StudioState.language === 'en' ? 'Start Development' : 'Entwicklung starten'} (-${formatMoney(baseCost + fee)})`;
       }
     };
     platformSelect.onchange = updateDevCostBtn;
@@ -282,6 +315,65 @@ function applyFeatureUnlocksToUI() {
     if (labelUnlocked) btnLabel.classList.remove('card-locked');
     else btnLabel.classList.add('card-locked');
   }
+
+  // Content Creator Sponsorship / Streamer (2010)
+  const streamerUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('creator_sponsorship', year) : (year >= 2010);
+  const badgeStreamer = document.getElementById('badge-lock-streamer');
+  const btnStreamer = document.getElementById('btn-marketing-streamer');
+  if (badgeStreamer) badgeStreamer.style.display = streamerUnlocked ? 'none' : 'inline-block';
+  if (btnStreamer) {
+    btnStreamer.disabled = !streamerUnlocked;
+    if (streamerUnlocked) {
+      if (typeof btnStreamer.removeAttribute === 'function') btnStreamer.removeAttribute('disabled');
+      btnStreamer.classList.remove('card-locked');
+    } else {
+      if (typeof btnStreamer.setAttribute === 'function') btnStreamer.setAttribute('disabled', 'true');
+      btnStreamer.classList.add('card-locked');
+    }
+  }
+}
+
+function showGameOverModal() {
+  const modal = document.getElementById('modal-game-over');
+  if (modal) {
+    const statsEl = document.getElementById('game-over-stats');
+    if (statsEl) {
+      const gamesCount = StudioState.releasedGames ? StudioState.releasedGames.length : 0;
+      const totalRev = StudioState.releasedGames
+        ? StudioState.releasedGames.reduce((acc, g) => acc + (g.revenue || 0), 0)
+        : 0;
+      const fansCount = StudioState.fans || 0;
+      const gotyCount = StudioState.gotyAwards ? StudioState.gotyAwards.length : 0;
+      statsEl.innerHTML = `
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin: 10px 0;">
+          <p>🎮 <strong>${StudioState.language === 'en' ? 'Released Games' : 'Veröffentlichte Spiele'}:</strong> ${gamesCount}</p>
+          <p>💰 <strong>${StudioState.language === 'en' ? 'Total Revenue' : 'Gesamteinnahmen'}:</strong> ${formatMoney(totalRev)}</p>
+          <p>👥 <strong>${StudioState.language === 'en' ? 'Global Fans' : 'Treue Fans'}:</strong> ${fansCount.toLocaleString()}</p>
+          <p>🏆 <strong>${StudioState.language === 'en' ? 'GOTY Awards' : 'Gewonnene GOTY-Awards'}:</strong> ${gotyCount}</p>
+        </div>
+      `;
+    }
+    modal.style.display = 'flex';
+  }
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('success');
+    AudioEngine.speak(t('game_end_title') + ' ' + t('game_end_body'));
+  }
+}
+
+function closeGameOverModal() {
+  const modal = document.getElementById('modal-game-over');
+  if (modal) modal.style.display = 'none';
+}
+
+function continueEndlessMode() {
+  StudioState.endlessMode = true;
+  closeGameOverModal();
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('confirm');
+    AudioEngine.speak(StudioState.language === 'en' ? 'Endless mode activated. Build your studio forever!' : 'Endlos-Modus aktiviert. Baue dein Studio für immer weiter aus!');
+  }
+  if (typeof updateHUD === 'function') updateHUD();
 }
 
 if (typeof window !== 'undefined') {
@@ -305,6 +397,9 @@ if (typeof window !== 'undefined') {
   window.dismissEventBanner = dismissEventBanner;
   window.showTimelineEventBanner = showTimelineEventBanner;
   window.applyFeatureUnlocksToUI = applyFeatureUnlocksToUI;
+  window.showGameOverModal = showGameOverModal;
+  window.closeGameOverModal = closeGameOverModal;
+  window.continueEndlessMode = continueEndlessMode;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -313,6 +408,7 @@ if (typeof module !== 'undefined' && module.exports) {
     closeResearchModal, openEngineModal, closeEngineModal, openStaffModal,
     closeStaffModal, openMarketingModal, closeMarketingModal, openSoundConModal,
     closeSoundConModal, openLabelModal, closeLabelModal, openBankModal,
-    closeBankModal, dismissEventBanner, showTimelineEventBanner, applyFeatureUnlocksToUI
+    closeBankModal, dismissEventBanner, showTimelineEventBanner, applyFeatureUnlocksToUI,
+    showGameOverModal, closeGameOverModal, continueEndlessMode
   };
 }

@@ -2056,16 +2056,38 @@ const HISTORICAL_TOPICS = [
 
 function getCurrentEra(year) {
   const currentY = Number(year) || START_YEAR;
-  return HISTORICAL_ERAS.find(e => currentY >= e.start && currentY <= e.end) || HISTORICAL_ERAS[0];
+  if (currentY < HISTORICAL_ERAS[0].start) return HISTORICAL_ERAS[0];
+  if (currentY > HISTORICAL_ERAS[HISTORICAL_ERAS.length - 1].end) {
+    return HISTORICAL_ERAS[HISTORICAL_ERAS.length - 1];
+  }
+  return HISTORICAL_ERAS.find(e => currentY >= e.start && currentY <= e.end) || HISTORICAL_ERAS[HISTORICAL_ERAS.length - 1];
 }
 
-function getAvailablePlatforms(year) {
+function getAvailablePlatforms(year, extraUnlocked = []) {
   const currentY = Number(year) || START_YEAR;
-  return PLATFORMS.filter(p => {
+  const base = PLATFORMS.filter(p => {
     const start = p.unlock_year != null ? p.unlock_year : START_YEAR;
     const end = p.end_year != null ? p.end_year : 9999;
     return currentY >= start && currentY <= end;
   });
+  const result = [...base];
+  const baseNames = new Set(base.map(p => p.name));
+
+  const extraList = Array.isArray(extraUnlocked) && extraUnlocked.length > 0 ? extraUnlocked : ((typeof StudioState !== 'undefined' && StudioState && StudioState.unlockedPlatforms) ? StudioState.unlockedPlatforms : []);
+  extraList.forEach(platName => {
+    if (!baseNames.has(platName)) {
+      const match = PLATFORMS.find(p => p.name === platName);
+      if (match) {
+        const end = match.end_year != null ? match.end_year : 9999;
+        if (currentY <= end) {
+          result.push(match);
+          baseNames.add(platName);
+        }
+      }
+    }
+  });
+
+  return result;
 }
 
 function getNewlyUnlockedPlatforms(year) {

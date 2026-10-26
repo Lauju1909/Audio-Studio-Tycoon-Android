@@ -35,16 +35,25 @@ if (typeof document !== 'undefined' && document.addEventListener) {
     if (typeof startWeeklyLoop === 'function') startWeeklyLoop();
     if (typeof applyLanguageToUI === 'function') applyLanguageToUI();
 
+    // Display initial historical event banner (e.g. 1930 Weltwirtschaftskrise)
+    if (typeof showTimelineEventBanner === 'function' && StudioState.eventLog && StudioState.eventLog.length > 0) {
+      const latestEv = StudioState.eventLog[0];
+      const evText = (typeof t === 'function') ? t(latestEv.text) : latestEv.text;
+      showTimelineEventBanner(latestEv.year, evText, latestEv);
+    }
+
     // Android Hardware Back-Button Handling
     document.addEventListener('backbutton', (e) => {
       e.preventDefault();
+      if (typeof dismissEventBanner === 'function') dismissEventBanner();
       if (typeof closeAllModals === 'function') closeAllModals();
       if (typeof AudioEngine !== 'undefined') AudioEngine.vibrate(20);
     });
 
-    // Global ESC key to close open modals
+    // Global ESC key to close open modals and event banner
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (typeof dismissEventBanner === 'function') dismissEventBanner();
         if (typeof closeAllModals === 'function') closeAllModals();
       }
     });

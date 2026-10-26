@@ -25,7 +25,7 @@ function startDevelopment() {
   const platform = (typeof PLATFORMS !== 'undefined' ? PLATFORMS.find(p => p.name === selectedPlatName) : null) || availablePlats[0] || { name: selectedPlatName, license_fee: 0, market_multi: 1.0 };
 
   const licenseFee = platform.license_fee || 0;
-  const baseCost = 5000;
+  const baseCost = Math.round(5000 * (StudioState.devCostMultiplier || 1.0));
   const totalCost = baseCost + licenseFee;
 
   if (StudioState.cash < totalCost) {
@@ -175,9 +175,19 @@ function finishDevelopment() {
   if (!p) return;
 
   const synergyTable = (typeof THEME_GENRE_SYNERGIES !== 'undefined' ? THEME_GENRE_SYNERGIES[p.theme] : null) || {};
-  const synergyMult = synergyTable[p.genre] || 1.0;
+  let synergyMult = synergyTable[p.genre] || 1.0;
+
+  const histTopic = (typeof HISTORICAL_TOPICS !== 'undefined') ? HISTORICAL_TOPICS.find(t => t.name === p.theme) : null;
+  if (histTopic) {
+    if (histTopic.synergy && p.genre && histTopic.synergy.toLowerCase() === p.genre.toLowerCase()) {
+      synergyMult = Math.max(synergyMult, 1.25);
+    }
+  }
 
   let baseScore = 65;
+  if (histTopic && histTopic.hype_level) {
+    baseScore += Math.max(0, (histTopic.hype_level - 2) * 2);
+  }
   if (p.sound >= 60) baseScore += 8;
   if (p.audioPts > 50) baseScore += 10;
   if (p.audioPts > 120) baseScore += 8;
@@ -186,7 +196,8 @@ function finishDevelopment() {
   if (p.bugs === 0) baseScore += 8;
   else if (p.bugs > 6) baseScore -= Math.min(25, p.bugs * 3);
 
-  let finalScore = Math.round(baseScore * synergyMult);
+  const qualityMulti = StudioState.qualityStandardMulti || 1.0;
+  let finalScore = Math.round(baseScore * synergyMult * qualityMulti);
 
   if (StudioState.unlockedTech.includes('surround_51') && (p.genre === 'Action' || p.theme === 'Horror')) {
     finalScore += 8;
@@ -202,7 +213,7 @@ function finishDevelopment() {
     marketingMult += (StudioState.marketingCampaign.hypeBoost / 100);
   }
 
-  const platName = p.platform || ((typeof getAvailablePlatforms === 'function') ? getAvailablePlatforms(StudioState.year)[0]?.name : "Hand-Abakus");
+  const platName = p.platform || ((typeof getAvailablePlatforms === 'function') ? getAvailablePlatforms(StudioState.year, StudioState.unlockedPlatforms)[0]?.name : "Hand-Abakus");
   const platform = (typeof PLATFORMS !== 'undefined' ? PLATFORMS.find(pl => pl.name === platName) : null) || { market_multi: (p.platformMarketMulti || 1.0) };
   const platformMulti = platform.market_multi || 1.0;
   const salesMultiplier = StudioState.salesMultiplier || 1.0;
@@ -238,12 +249,17 @@ function finishDevelopment() {
 
   StudioState.releasedGames.unshift(finishedGame);
 
+  const curYear = StudioState.year;
+  const ostFormat = curYear < 1963 ? "Schellack / Vinyl" :
+                    curYear < 1982 ? "Kassette / Vinyl" :
+                    curYear < 2000 ? "CD / Kassette" : "Digital / Streaming";
+
   const royaltyWeekly = Math.max(50, Math.round(earnedCash / 16));
   StudioState.soundtrackLabel.unshift({
     id: Date.now() + 1,
     title: `${p.title} (OST)`,
     gameTitle: p.title,
-    format: "Digital / Vinyl",
+    format: ostFormat,
     revenuePerWeek: royaltyWeekly,
     totalRevenue: 0
   });

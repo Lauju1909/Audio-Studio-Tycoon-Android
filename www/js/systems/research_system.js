@@ -35,6 +35,17 @@ function renderResearchList() {
 }
 
 function doResearch(techId, cost) {
+  const tech = RESEARCH_CATALOG.find(t => t.id === techId);
+  if (!tech) return;
+
+  if (StudioState.year < (tech.year || 1930)) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('tech_not_available_yet', { year: tech.year }));
+    }
+    return;
+  }
+
   if (StudioState.rp < cost) {
     if (typeof AudioEngine !== 'undefined') {
       AudioEngine.playSound('error');
@@ -42,9 +53,6 @@ function doResearch(techId, cost) {
     }
     return;
   }
-
-  const tech = RESEARCH_CATALOG.find(t => t.id === techId);
-  if (!tech) return;
 
   StudioState.rp -= cost;
   if (!StudioState.unlockedTech.includes(techId)) {

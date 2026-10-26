@@ -309,8 +309,11 @@
           <strong>Radio- &amp; Podcast-Werbung</strong>
           <span>Kosten: 8.000 € • +50 Hype • +600 Fans</span>
         </button>
-        <button type="button" class="card btn-booth" onclick="startMarketingCampaign('streamer')">
-          <strong>Gamer-Streamer &amp; Influencer Showcase</strong>
+        <button type="button" class="card btn-booth" id="btn-marketing-streamer" onclick="startMarketingCampaign('streamer')">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <strong>Gamer-Streamer &amp; Influencer Showcase</strong>
+            <span class="badge badge-locked" id="badge-lock-streamer" style="display: none;">(Ab 2010)</span>
+          </div>
           <span>Kosten: 20.000 € • +90 Hype • +2.500 Fans</span>
         </button>
       </div>
@@ -374,6 +377,21 @@
         </div>
       </div>
       <button type="button" class="btn btn-secondary" onclick="closeBankModal()" style="margin-top: 14px;">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: HISTORISCHER ABSCHLUSS (GAME OVER / 1930-2026) -->
+  <div id="modal-game-over" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="game-over-title" style="display: none;">
+    <div class="modal-card" style="border-color: var(--accent); background: #0f172a;">
+      <h2 id="game-over-title" style="color: var(--accent);">🏆 Historische Ära Vollendet (1930–2026)!</h2>
+      <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 6px;">Du hast die gesamte 96-jährige Entwicklung der Games-Branche vom Hand-Abakus bis zu Neural-Interfaces gemeistert!</p>
+      <div id="game-over-stats">
+        <!-- Dynamisch -->
+      </div>
+      <div class="modal-actions" style="margin-top: 16px;">
+        <button type="button" class="btn btn-primary" onclick="continueEndlessMode()">🚀 Endlos-Modus fortsetzen</button>
+        <button type="button" class="btn btn-secondary" onclick="resetGame()" style="color: var(--red);">🔄 Neues Spiel starten</button>
+      </div>
     </div>
   </div>
 

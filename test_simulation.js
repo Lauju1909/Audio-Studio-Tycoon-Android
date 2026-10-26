@@ -4,34 +4,37 @@ const fs = require('fs');
 // Mock browser globals
 global.window = global;
 const mockElements = {};
-global.document = {
-  addEventListener: () => {},
-  querySelectorAll: () => Object.values(mockElements),
-  createElement: (tag) => ({
+function createMockElement(tag = 'div', id = '') {
+  return {
+    id,
+    tagName: tag.toUpperCase(),
     style: {},
     textContent: '',
     value: '',
     innerHTML: '',
-    appendChild: () => {},
-    setAttribute: () => {}
-  }),
+    children: [],
+    appendChild(child) {
+      this.children.push(child);
+      this.innerHTML += `<${child.tagName || 'DIV'} value="${child.value || ''}">${child.textContent || ''}</${child.tagName || 'DIV'}>`;
+    },
+    setAttribute() {},
+    removeAttribute() {},
+    getAttribute() { return null; },
+    classList: {
+      add() {},
+      remove() {},
+      contains() { return false; }
+    }
+  };
+}
+
+global.document = {
+  addEventListener: () => {},
+  querySelectorAll: () => Object.values(mockElements),
+  createElement: (tag) => createMockElement(tag),
   getElementById: (id) => {
     if (!mockElements[id]) {
-      mockElements[id] = {
-        id,
-        style: {},
-        textContent: '',
-        value: '',
-        innerHTML: '',
-        appendChild: () => {},
-        setAttribute: () => {},
-        getAttribute: () => null,
-        classList: {
-          add: () => {},
-          remove: () => {},
-          contains: () => false
-        }
-      };
+      mockElements[id] = createMockElement('div', id);
     }
     return mockElements[id];
   }
@@ -56,6 +59,12 @@ assert.strictEqual(StudioState.year, 1930);
 assert.strictEqual(StudioState.week, 1);
 assert.strictEqual(StudioState.weeksPerYear, 48);
 assert.strictEqual(StudioState.loan, 0);
+assert(StudioState.unlockedPlatforms.includes("Hand-Abakus"), "1930 initial state must include Hand-Abakus");
+assert(StudioState.unlockedTopics.includes("Abakus"), "1930 initial state must include historical topic Abakus");
+assert(StudioState.unlockedTopics.includes("Fantasy"), "1930 initial state must include base theme Fantasy");
+assert.strictEqual(StudioState.salesMultiplier, 0.8, "1930 initial state must apply 1930 Great Depression salesMultiplier 0.8");
+assert.strictEqual(StudioState.eventLog.length, 1, "1930 initial state must log the 1930 historical event");
+assert.strictEqual(StudioState.eventLog[0].year, 1930);
 updateHUD();
 
 console.log("=== TEST 2: Weekly tick, payroll & loan interest ===");
@@ -100,9 +109,18 @@ assert.strictEqual(StudioState.loan, 0);
 
 console.log("=== TEST 5: Research technology mechanics ===");
 StudioState.rp = 100;
+StudioState.year = 1930;
+// In 1930, researching 1985 tech should be blocked
 doResearch('dsp_effects', 40);
-assert(StudioState.unlockedTech.includes('dsp_effects'), "DSP effects should be unlocked in state");
+assert.strictEqual(StudioState.unlockedTech.includes('dsp_effects'), false, "DSP effects (1985) must be blocked in 1930");
+assert.strictEqual(StudioState.rp, 100, "RP should NOT be deducted for blocked research");
+
+// In 1985, researching 1985 tech succeeds
+StudioState.year = 1985;
+doResearch('dsp_effects', 40);
+assert(StudioState.unlockedTech.includes('dsp_effects'), "DSP effects should be unlocked in state at year 1985");
 assert.strictEqual(StudioState.rp, 60, "RP should be deducted");
+StudioState.year = 1930;
 
 console.log("=== TEST 6: Custom Engine Workshop ===");
 StudioState.cash = 100000;
@@ -166,6 +184,14 @@ toggleLanguage(); // back to DE
 
 console.log("=== TEST 10: Marketing Campaigns & Decay ===");
 StudioState.cash = 50000;
+StudioState.year = 1930;
+// In 1930, streamer campaign is blocked
+startMarketingCampaign('streamer');
+assert.strictEqual(StudioState.cash, 50000, "Streamer marketing must be blocked in 1930");
+assert.strictEqual(StudioState.marketingCampaign, null, "No campaign created in 1930");
+
+// In 2010, streamer campaign succeeds
+StudioState.year = 2010;
 const fansBeforeCampaign = StudioState.fans;
 startMarketingCampaign('streamer');
 assert.strictEqual(StudioState.cash, 30000, "Streamer marketing costs 20,000 EUR");
@@ -173,13 +199,22 @@ assert.strictEqual(StudioState.fans, fansBeforeCampaign + 2500, "Streamer market
 assert.strictEqual(StudioState.marketingCampaign.weeksLeft, 16);
 tickWeek();
 assert.strictEqual(StudioState.marketingCampaign.weeksLeft, 15);
+StudioState.year = 1930;
 
 console.log("=== TEST 11: SoundCon Expo Attendance ===");
 StudioState.cash = 100000;
+StudioState.year = 1930;
+// In 1930, SoundCon is blocked
+attendSoundCon('keynote');
+assert.strictEqual(StudioState.cash, 100000, "SoundCon must be blocked in 1930");
+
+// In 1995, SoundCon succeeds
+StudioState.year = 1995;
 const fansBeforeCon = StudioState.fans;
 attendSoundCon('keynote');
 assert.strictEqual(StudioState.cash, 75000, "Keynote booth costs 25,000 EUR");
 assert.strictEqual(StudioState.fans, fansBeforeCon + 5000, "Keynote booth gains 5,000 fans");
+StudioState.year = 1930;
 
 console.log("=== TEST 12: Annual GOTY Awards with 48 Weeks / Year ===");
 StudioState.releasedGames.push({
@@ -309,4 +344,86 @@ global.ariaLiveQueue.announce("Test message 1", "polite");
 global.ariaLiveQueue.announce("⚠️ Urgent interruption 2", "assertive");
 assert.ok(true, "AriaLiveQueue handles polite and assertive announcements cleanly without crashing");
 
-console.log("\nALL 20 SIMULATION & TIMELINE INTEGRATION TESTS PASSED 100%!");
+console.log("=== TEST 21: Era Boundaries Clamping ===");
+const eraPast = getCurrentEra(1850);
+assert.strictEqual(eraPast.name_de, "Pionier-Ära (Mechanik & Röhren)", "Years before 1930 clamp to Pioneer Era");
+const eraFuture = getCurrentEra(2050);
+assert.strictEqual(eraFuture.name_de, "Cloud, VR & KI-Moderne", "Years after 2026 clamp to modern AI era");
+
+console.log("=== TEST 22: Dynamic Theme & Genre Selection with Historical Synergy ===");
+StudioState.year = 1935;
+StudioState.unlockedTopics = getAvailableTopics(1935).map(t => t.name);
+openDevModal();
+const themeSelect = document.getElementById('select-theme');
+const genreSelect = document.getElementById('select-genre');
+assert.ok(themeSelect.innerHTML.includes('Abakus'), "select-theme must contain unlocked historical topics");
+assert.ok(genreSelect.innerHTML.includes('Action'), "select-genre must contain unlocked genres");
+
+// Test historical topic synergy in development
+StudioState.cash = 100000;
+themeSelect.value = "Abakus";
+genreSelect.value = "Puzzle";
+startDevelopment();
+assert.strictEqual(StudioState.activeProject.theme, "Abakus");
+StudioState.activeProject.progress = 100;
+finishDevelopment();
+const abakusGame = StudioState.releasedGames[0];
+assert.strictEqual(abakusGame.theme, "Abakus");
+assert.strictEqual(abakusGame.genre, "Puzzle");
+assert.ok(abakusGame.score >= 70, "Abakus + Puzzle historical synergy should boost score");
+
+console.log("=== TEST 23: Historical Event Effects Coverage ===");
+// Test salary_increase (1968)
+const salaryBefore = StudioState.salaryMultiplier || 1.0;
+StudioState.year = 1967;
+StudioState.week = 48;
+tickWeek();
+assert.strictEqual(StudioState.year, 1968);
+assert(StudioState.salaryMultiplier > salaryBefore, "1968 event must increase salaryMultiplier");
+
+// Test server_costs (1997)
+StudioState.year = 1996;
+StudioState.week = 48;
+tickWeek();
+assert.strictEqual(StudioState.year, 1997);
+assert(StudioState.serverCosts > 0, "1997 event must establish serverCosts");
+
+// Test medium_upgrade (1994)
+StudioState.year = 1993;
+StudioState.week = 48;
+const salesBefore94 = StudioState.salesMultiplier;
+tickWeek();
+assert.strictEqual(StudioState.year, 1994);
+assert.strictEqual(StudioState.salesMultiplier, salesBefore94 * 1.25, "1994 event must boost salesMultiplier by 1.25");
+
+console.log("=== TEST 24: Year 2026 Game End & Endless Mode Transition ===");
+StudioState.year = 2025;
+StudioState.week = 48;
+StudioState.isGameOver = false;
+StudioState.endlessMode = false;
+tickWeek();
+assert.strictEqual(StudioState.year, 2026);
+assert.strictEqual(StudioState.isGameOver, true, "2026 year transition must set isGameOver to true");
+
+// tickWeek should now pause and NOT advance time
+const week2026 = StudioState.week;
+tickWeek();
+assert.strictEqual(StudioState.week, week2026, "Time must NOT advance when isGameOver is true and endlessMode is false");
+
+// Activate Endless Mode
+continueEndlessMode();
+assert.strictEqual(StudioState.endlessMode, true, "Endless mode must be active");
+tickWeek();
+assert.strictEqual(StudioState.week, week2026 + 1, "Time must advance once endlessMode is enabled");
+
+console.log("=== TEST 25: German i18n Zero Mojibake Verification ===");
+const deTranslations = fs.readFileSync('www/js/i18n.js', 'utf8');
+assert(!deTranslations.includes('Ã¼'), "No 'Ã¼' mojibake allowed");
+assert(!deTranslations.includes('Ã¶'), "No 'Ã¶' mojibake allowed");
+assert(!deTranslations.includes('Ã¤'), "No 'Ã¤' mojibake allowed");
+assert(!deTranslations.includes('ÃŸ'), "No 'ÃŸ' mojibake allowed");
+assert.strictEqual(t("event_1934").includes("für"), true, "event_1934 must contain proper 'für'");
+assert.strictEqual(t("event_1951").includes("Großrechner"), true, "event_1951 must contain proper 'Großrechner'");
+assert.strictEqual(t("event_1973").includes("Ölkrise"), true, "event_1973 must contain proper 'Ölkrise'");
+
+console.log("\nALL 25 SIMULATION & TIMELINE INTEGRATION TESTS PASSED 100%!");
