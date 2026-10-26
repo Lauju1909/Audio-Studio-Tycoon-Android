@@ -2,17 +2,36 @@
  * Audio Studio Tycoon - Studio State Model & Financial Helpers
  */
 
-function createDefaultState() {
+function createDefaultState(startYear = 1930) {
+  const initYear = (typeof START_YEAR !== 'undefined') ? START_YEAR : (startYear || 1930);
   return {
     studioName: "Audio Wave Studios",
-    year: 1980,
+    year: initYear,
     week: 1,
+    weeksPerYear: 48,
     cash: 50000,
     fans: 150,
     rp: 15,
     loan: 0,
+    loanInterestRate: 0.005,
     language: "de",
     unlockedTech: [],
+    unlockedFeatures: [],
+    unlockedPlatforms: [],
+    unlockedTopics: [],
+    salesMultiplier: 1.0,
+    hypeMultiplier: 1.0,
+    hype: 50,
+    prestige: 0,
+    taxRate: 0.1,
+    logicMultiplier: 1.0,
+    devSpeedMultiplier: 1.0,
+    marketingEfficiency: 1.0,
+    streamerHypeMulti: 1.0,
+    subscriptionMulti: 1.0,
+    qualityStandardMulti: 1.0,
+    currentTrend: { topic: "Radio-Drama", genre: "Abenteuer" },
+    eventLog: [],
     customEngines: [
       { id: 'engine_basic_1', name: 'Monophonic 8-Bit Engine', features: ['basic_audio'], audioBonus: 5, techBonus: 5, bugReduction: 0 }
     ],

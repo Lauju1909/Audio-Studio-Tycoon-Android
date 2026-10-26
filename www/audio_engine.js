@@ -108,11 +108,14 @@ class TycoonAudioEngine {
   speak(text, interrupt = false) {
     if (!text) return;
 
-    // Update Screen Reader live region for TalkBack / NVDA
-    const announcer = document.getElementById(interrupt ? 'sr-announcer' : 'sr-polite') || document.getElementById('sr-announcer');
-    if (announcer) {
-      announcer.textContent = '';
-      setTimeout(() => { announcer.textContent = text; }, 20);
+    if (typeof ariaLiveQueue !== 'undefined' && ariaLiveQueue.announce) {
+      ariaLiveQueue.announce(text, interrupt ? 'assertive' : 'polite');
+    } else {
+      const announcer = document.getElementById(interrupt ? 'sr-announcer' : 'sr-polite') || document.getElementById('sr-announcer');
+      if (announcer) {
+        announcer.textContent = '';
+        setTimeout(() => { announcer.textContent = text; }, 20);
+      }
     }
 
     if (!this.isTTSActive || !window.speechSynthesis) return;
@@ -135,5 +138,70 @@ class TycoonAudioEngine {
   }
 }
 
+const ALL_EMOJI_REGEX = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+
+class AriaLiveQueue {
+  constructor(announcerId = "sr-announcer") {
+    this.announcerId = announcerId;
+    this.queue = [];
+    this.isProcessing = false;
+    this.timer = null;
+  }
+
+  announce(message, priority = 'polite') {
+    if (!message) return;
+    const cleanMsg = String(message).replace(ALL_EMOJI_REGEX, '').trim();
+    if (!cleanMsg) return;
+
+    if (priority === 'assertive') {
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
+      this.queue.unshift({ message: cleanMsg, priority: 'assertive' });
+      this.isProcessing = false;
+      this.processNext();
+    } else {
+      this.queue.push({ message: cleanMsg, priority: 'polite' });
+      if (!this.isProcessing) {
+        this.processNext();
+      }
+    }
+  }
+
+  processNext() {
+    if (this.queue.length === 0) {
+      this.isProcessing = false;
+      return;
+    }
+
+    this.isProcessing = true;
+    const item = this.queue.shift();
+    const liveEl = (typeof document !== 'undefined') ? (document.getElementById(item.priority === 'assertive' ? 'sr-announcer' : 'sr-polite') || document.getElementById(this.announcerId) || document.getElementById("sr-announcer")) : null;
+
+    if (liveEl) {
+      liveEl.textContent = '';
+      setTimeout(() => {
+        liveEl.textContent = item.message;
+        const readDuration = Math.max(1200, item.message.length * 65);
+        this.timer = setTimeout(() => {
+          this.processNext();
+        }, readDuration);
+      }, 50);
+    } else {
+      this.processNext();
+    }
+  }
+}
+
+const ariaLiveQueue = new AriaLiveQueue("sr-announcer");
 const AudioEngine = new TycoonAudioEngine();
-window.AudioEngine = AudioEngine;
+
+if (typeof window !== 'undefined') {
+  window.AriaLiveQueue = AriaLiveQueue;
+  window.ariaLiveQueue = ariaLiveQueue;
+  window.AudioEngine = AudioEngine;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { TycoonAudioEngine, AudioEngine, AriaLiveQueue, ariaLiveQueue };
+}

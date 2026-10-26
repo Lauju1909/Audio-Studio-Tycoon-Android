@@ -28,6 +28,28 @@ function updateHUD() {
       debtBadge.style.display = 'none';
     }
   }
+
+  // Timeline & Era Progress UI
+  const era = (typeof getCurrentEra === 'function') ? getCurrentEra(StudioState.year) : { name_de: 'Pionier-Ära', name_en: 'Pioneer Era', start: 1930, end: 1949 };
+  const eraName = StudioState.language === 'en' ? era.name_en : era.name_de;
+  const eraEl = document.getElementById('hud-era');
+  if (eraEl) eraEl.textContent = eraName;
+
+  const eraTextEl = document.getElementById('timeline-current-era-text');
+  if (eraTextEl) eraTextEl.textContent = `${eraName} (${era.start}–${era.end})`;
+
+  const progressLabel = document.getElementById('timeline-progress-label');
+  if (progressLabel) progressLabel.textContent = `${StudioState.year} / 2026`;
+
+  const progressFill = document.getElementById('timeline-progress-fill');
+  if (progressFill) {
+    const pct = Math.min(100, Math.max(0, Math.round(((StudioState.year - 1930) / (2026 - 1930)) * 100)));
+    progressFill.style.width = `${pct}%`;
+  }
+
+  if (typeof applyFeatureUnlocksToUI === 'function') {
+    applyFeatureUnlocksToUI();
+  }
 }
 
 function renderReleasedGames() {
@@ -46,7 +68,7 @@ function renderReleasedGames() {
     card.innerHTML = `
       <div>
         <strong>${g.title}</strong>
-        <p style="font-size: 0.8rem; color: #94a3b8;">${g.theme} • ${g.genre} (J${g.year}/W${g.week})</p>
+        <p style="font-size: 0.8rem; color: #94a3b8;">${g.platform ? `[${g.platform}] • ` : ''}${g.theme} • ${g.genre} (J${g.year}/W${g.week})</p>
       </div>
       <div style="text-align: right;">
         <strong style="color: var(--accent); font-size: 1.15rem;">${g.score}%</strong>

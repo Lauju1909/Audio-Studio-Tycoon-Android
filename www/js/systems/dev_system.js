@@ -19,11 +19,19 @@ function generateRandomTitle() {
 }
 
 function startDevelopment() {
-  const cost = 5000;
-  if (StudioState.cash < cost) {
+  const platformSelect = document.getElementById('select-platform');
+  const availablePlats = (typeof getAvailablePlatforms === 'function') ? getAvailablePlatforms(StudioState.year) : (typeof PLATFORMS !== 'undefined' ? PLATFORMS : []);
+  const selectedPlatName = (platformSelect && platformSelect.value) ? platformSelect.value : (availablePlats[0] ? availablePlats[0].name : "Hand-Abakus");
+  const platform = (typeof PLATFORMS !== 'undefined' ? PLATFORMS.find(p => p.name === selectedPlatName) : null) || availablePlats[0] || { name: selectedPlatName, license_fee: 0, market_multi: 1.0 };
+
+  const licenseFee = platform.license_fee || 0;
+  const baseCost = 5000;
+  const totalCost = baseCost + licenseFee;
+
+  if (StudioState.cash < totalCost) {
     if (typeof AudioEngine !== 'undefined') {
       AudioEngine.playSound('error');
-      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(cost) }));
+      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(totalCost) }));
     }
     return;
   }
@@ -49,11 +57,13 @@ function startDevelopment() {
     assignedStaffIds.push(StudioState.staff[0].id);
   }
 
-  StudioState.cash -= cost;
+  StudioState.cash -= totalCost;
   if (typeof closeDevModal === 'function') closeDevModal();
 
   StudioState.activeProject = {
     title, theme, genre, engineId, gameplay, sound,
+    platform: platform.name,
+    platformMarketMulti: platform.market_multi,
     assignedStaffIds,
     progress: 0,
     features: 0,
@@ -71,7 +81,7 @@ function startDevelopment() {
   if (typeof AudioEngine !== 'undefined') {
     AudioEngine.playSound('buy');
     AudioEngine.vibrate(40);
-    AudioEngine.speak(t('dev_started', { title, theme, genre }));
+    AudioEngine.speak(t('dev_started', { title, theme, genre, platform: platform.name }));
   }
   if (typeof updateHUD === 'function') updateHUD();
 }
@@ -192,7 +202,12 @@ function finishDevelopment() {
     marketingMult += (StudioState.marketingCampaign.hypeBoost / 100);
   }
 
-  const baseSales = finalScore * 400 * marketingMult;
+  const platName = p.platform || ((typeof getAvailablePlatforms === 'function') ? getAvailablePlatforms(StudioState.year)[0]?.name : "Hand-Abakus");
+  const platform = (typeof PLATFORMS !== 'undefined' ? PLATFORMS.find(pl => pl.name === platName) : null) || { market_multi: (p.platformMarketMulti || 1.0) };
+  const platformMulti = platform.market_multi || 1.0;
+  const salesMultiplier = StudioState.salesMultiplier || 1.0;
+
+  const baseSales = Math.round(finalScore * 400 * marketingMult * platformMulti * salesMultiplier);
   const fanBonus = Math.round(StudioState.fans * (finalScore / 100) * 1.5);
   const earnedCash = Math.round((baseSales + fanBonus) * 2.2);
 
@@ -212,6 +227,8 @@ function finishDevelopment() {
     title: p.title,
     theme: p.theme,
     genre: p.genre,
+    platform: platName,
+    platformMulti: platformMulti,
     score: finalScore,
     sales: Math.round(baseSales + fanBonus),
     revenue: earnedCash,

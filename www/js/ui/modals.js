@@ -19,6 +19,30 @@ function openDevModal() {
     return;
   }
 
+  const platformSelect = document.getElementById('select-platform');
+  const availablePlats = (typeof getAvailablePlatforms === 'function') ? getAvailablePlatforms(StudioState.year) : (typeof PLATFORMS !== 'undefined' ? PLATFORMS : []);
+  if (platformSelect) {
+    platformSelect.innerHTML = '';
+    availablePlats.forEach(plat => {
+      const opt = document.createElement('option');
+      opt.value = plat.name;
+      const feeText = plat.license_fee > 0 ? formatMoney(plat.license_fee) : t('free_license');
+      opt.textContent = `${plat.name} (${plat.type} • ${t('market_share_short', { multi: plat.market_multi })} • ${feeText})`;
+      platformSelect.appendChild(opt);
+    });
+
+    const updateDevCostBtn = () => {
+      const curPlat = availablePlats.find(p => p.name === platformSelect.value) || availablePlats[0];
+      const fee = curPlat ? (curPlat.license_fee || 0) : 0;
+      const submitBtn = document.getElementById('btn-submit-dev');
+      if (submitBtn) {
+        submitBtn.textContent = `${StudioState.language === 'en' ? 'Start Development' : 'Entwicklung starten'} (-${formatMoney(5000 + fee)})`;
+      }
+    };
+    platformSelect.onchange = updateDevCostBtn;
+    updateDevCostBtn();
+  }
+
   const engineSelect = document.getElementById('select-engine');
   if (engineSelect) {
     engineSelect.innerHTML = '';
@@ -130,6 +154,15 @@ function closeMarketingModal() {
 
 // SoundCon Modal
 function openSoundConModal() {
+  const isUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('soundcon', StudioState.year) : (StudioState.year >= 1995);
+  if (!isUnlocked) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('feature_locked', { feature: 'SoundCon', year: 1995 }));
+    }
+    return;
+  }
+
   const modal = document.getElementById('modal-soundcon');
   if (modal) modal.style.display = 'flex';
   if (typeof AudioEngine !== 'undefined') {
@@ -145,6 +178,15 @@ function closeSoundConModal() {
 
 // Soundtrack Label Modal
 function openLabelModal() {
+  const isUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('soundtrack_label', StudioState.year) : (StudioState.year >= 1985);
+  if (!isUnlocked) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('feature_locked', { feature: 'Soundtrack-Label', year: 1985 }));
+    }
+    return;
+  }
+
   const modal = document.getElementById('modal-label');
   if (modal) modal.style.display = 'flex';
   const list = document.getElementById('label-releases-list');
@@ -195,6 +237,53 @@ function closeBankModal() {
   if (modal) modal.style.display = 'none';
 }
 
+function dismissEventBanner() {
+  const banner = document.getElementById('timeline-event-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+function showTimelineEventBanner(year, text, eventData) {
+  const banner = document.getElementById('timeline-event-banner');
+  if (!banner) return;
+  const yearEl = document.getElementById('event-banner-year');
+  const titleEl = document.getElementById('event-banner-title');
+  const descEl = document.getElementById('event-banner-desc');
+  if (yearEl) yearEl.textContent = year;
+  if (titleEl) titleEl.textContent = t('event_banner_title', { year });
+  if (descEl) {
+    let impactText = '';
+    if (eventData && eventData.effect) {
+      impactText = ` (${t('event_impact_label')} ${eventData.effect} -> ${eventData.value})`;
+    }
+    descEl.textContent = `${text}${impactText}`;
+  }
+  banner.style.display = 'block';
+}
+
+function applyFeatureUnlocksToUI() {
+  const year = StudioState.year;
+
+  // SoundCon (1995)
+  const soundconUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('soundcon', year) : (year >= 1995);
+  const badgeSoundcon = document.getElementById('badge-lock-soundcon');
+  const btnSoundcon = document.getElementById('btn-action-soundcon');
+  if (badgeSoundcon) badgeSoundcon.style.display = soundconUnlocked ? 'none' : 'inline-block';
+  if (btnSoundcon) {
+    if (soundconUnlocked) btnSoundcon.classList.remove('card-locked');
+    else btnSoundcon.classList.add('card-locked');
+  }
+
+  // Soundtrack Label (1985)
+  const labelUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('soundtrack_label', year) : (year >= 1985);
+  const badgeLabel = document.getElementById('badge-lock-label');
+  const btnLabel = document.getElementById('btn-action-label');
+  if (badgeLabel) badgeLabel.style.display = labelUnlocked ? 'none' : 'inline-block';
+  if (btnLabel) {
+    if (labelUnlocked) btnLabel.classList.remove('card-locked');
+    else btnLabel.classList.add('card-locked');
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.closeAllModals = closeAllModals;
   window.openDevModal = openDevModal;
@@ -213,4 +302,17 @@ if (typeof window !== 'undefined') {
   window.closeLabelModal = closeLabelModal;
   window.openBankModal = openBankModal;
   window.closeBankModal = closeBankModal;
+  window.dismissEventBanner = dismissEventBanner;
+  window.showTimelineEventBanner = showTimelineEventBanner;
+  window.applyFeatureUnlocksToUI = applyFeatureUnlocksToUI;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    closeAllModals, openDevModal, closeDevModal, openResearchModal,
+    closeResearchModal, openEngineModal, closeEngineModal, openStaffModal,
+    closeStaffModal, openMarketingModal, closeMarketingModal, openSoundConModal,
+    closeSoundConModal, openLabelModal, closeLabelModal, openBankModal,
+    closeBankModal, dismissEventBanner, showTimelineEventBanner, applyFeatureUnlocksToUI
+  };
 }

@@ -16,7 +16,8 @@
     <div class="brand">
       <h1 id="studio-name-display" data-i18n="app_title">🎙️ Audio Studio Tycoon</h1>
       <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-        <span class="badge" id="hud-date">Jahr 1980 • Woche 1</span>
+        <span class="badge" id="hud-date">Jahr: 1930 | Woche: 1</span>
+        <span class="badge badge-era" id="hud-era">Pionier-Ära</span>
         <span class="badge text-red" id="hud-debt-badge" style="display: none; background: rgba(239, 68, 68, 0.15); border-color: var(--red);">Schulden: 0 €</span>
       </div>
     </div>
@@ -44,8 +45,31 @@
     </div>
   </section>
 
+  <!-- ZEITLEISTE & HISTORISCHE PROGRESSION -->
+  <section class="timeline-bar-container" aria-label="Historischer Zeitstrahl">
+    <div class="timeline-info-row">
+      <span id="timeline-current-era-text" style="font-size: 0.82rem; font-weight: 600; color: #a5b4fc;">Pionier-Ära (1930–1949)</span>
+      <span id="timeline-progress-label" style="font-size: 0.8rem; color: #94a3b8;">1930 / 2026</span>
+    </div>
+    <div class="progress-bar-container" style="height: 6px; margin-top: 4px;" aria-hidden="true">
+      <div class="progress-bar-fill" id="timeline-progress-fill" style="width: 0%; background: linear-gradient(90deg, #6366f1, #a855f7);"></div>
+    </div>
+  </section>
+
   <!-- HAUPTINHALT -->
   <main id="main-content" class="main-dashboard" role="main">
+
+    <!-- HISTORISCHES EREIGNIS BANNER -->
+    <div id="timeline-event-banner" class="card event-banner" style="display: none; border-color: var(--accent); background: rgba(245, 158, 11, 0.12); margin-bottom: 14px;" role="region" aria-live="assertive">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+        <div>
+          <span class="badge" id="event-banner-year" style="background: var(--accent); color: #000; font-weight: bold;">1930</span>
+          <strong id="event-banner-title" style="margin-left: 6px;">Weltwirtschaftskrise</strong>
+          <p id="event-banner-desc" style="font-size: 0.85rem; margin-top: 4px; color: #fef3c7;">-20% Profit. Fokus auf Billig-Logik.</p>
+        </div>
+        <button type="button" class="btn-icon" onclick="dismissEventBanner()" aria-label="Ereignis schließen" style="font-size: 1rem; width: 32px; height: 32px;">✕</button>
+      </div>
+    </div>
 
     <!-- AKTIVES PROJEKT (WENN EIN SPIEL ENTWICKELT WIRD) -->
     <div id="active-project-card" class="card active-dev-card" style="display: none;" aria-live="polite">
@@ -68,7 +92,7 @@
 
     <!-- HAUPTAKTIONEN -->
     <div class="actions-grid">
-      <button type="button" class="action-card card-primary" onclick="openDevModal()">
+      <button type="button" class="action-card card-primary" id="btn-action-new-game" onclick="openDevModal()">
         <span class="action-icon">🚀</span>
         <div class="action-info">
           <h3 data-i18n="new_game">Neues Spiel entwickeln</h3>
@@ -76,7 +100,7 @@
         </div>
       </button>
 
-      <button type="button" class="action-card" onclick="openResearchModal()">
+      <button type="button" class="action-card" id="btn-action-research" onclick="openResearchModal()">
         <span class="action-icon">🔬</span>
         <div class="action-info">
           <h3 data-i18n="research">Forschungslabor</h3>
@@ -84,7 +108,7 @@
         </div>
       </button>
 
-      <button type="button" class="action-card" onclick="openEngineModal()">
+      <button type="button" class="action-card" id="btn-action-engine" onclick="openEngineModal()">
         <span class="action-icon">⚙️</span>
         <div class="action-info">
           <h3 data-i18n="custom_engine">Engine-Werkstatt</h3>
@@ -92,7 +116,7 @@
         </div>
       </button>
 
-      <button type="button" class="action-card" onclick="openStaffModal()">
+      <button type="button" class="action-card" id="btn-action-staff" onclick="openStaffModal()">
         <span class="action-icon">👥</span>
         <div class="action-info">
           <h3 data-i18n="staff">Personal &amp; Team</h3>
@@ -100,7 +124,7 @@
         </div>
       </button>
 
-      <button type="button" class="action-card" onclick="openMarketingModal()">
+      <button type="button" class="action-card" id="btn-action-marketing" onclick="openMarketingModal()">
         <span class="action-icon">📢</span>
         <div class="action-info">
           <h3 data-i18n="marketing">Marketing &amp; Hype</h3>
@@ -108,23 +132,29 @@
         </div>
       </button>
 
-      <button type="button" class="action-card" onclick="openSoundConModal()">
+      <button type="button" class="action-card" id="btn-action-soundcon" onclick="openSoundConModal()">
         <span class="action-icon">🎪</span>
         <div class="action-info">
-          <h3 data-i18n="soundcon">SoundCon Messe</h3>
+          <div style="display: flex; align-items: center;">
+            <h3 data-i18n="soundcon">SoundCon Messe</h3>
+            <span class="badge badge-locked" id="badge-lock-soundcon" style="display: none;">(Ab 1995)</span>
+          </div>
           <p data-i18n="soundcon_desc">Spielemesse buchen, Hype aufbauen und Fans gewinnen</p>
         </div>
       </button>
 
-      <button type="button" class="action-card" onclick="openLabelModal()">
+      <button type="button" class="action-card" id="btn-action-label" onclick="openLabelModal()">
         <span class="action-icon">💿</span>
         <div class="action-info">
-          <h3 data-i18n="label">Soundtrack-Label</h3>
+          <div style="display: flex; align-items: center;">
+            <h3 data-i18n="label">Soundtrack-Label</h3>
+            <span class="badge badge-locked" id="badge-lock-label" style="display: none;">(Ab 1985)</span>
+          </div>
           <p data-i18n="label_desc">Musikrechte vermarkten &amp; wöchentliche Streaming-Einnahmen</p>
         </div>
       </button>
 
-      <button type="button" class="action-card" onclick="openBankModal()">
+      <button type="button" class="action-card" id="btn-action-bank" onclick="openBankModal()">
         <span class="action-icon">🏦</span>
         <div class="action-info">
           <h3 data-i18n="bank">Bank &amp; Kredite</h3>
@@ -181,6 +211,13 @@
       </div>
 
       <div class="form-group">
+        <label for="select-platform" data-i18n="platform_label">Ziel-Plattform:</label>
+        <select id="select-platform">
+          <!-- Dynamisch nach Jahr gefiltert -->
+        </select>
+      </div>
+
+      <div class="form-group">
         <label for="select-engine">Audio-Engine wählen:</label>
         <select id="select-engine">
           <!-- Dynamisch -->
@@ -205,7 +242,7 @@
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn btn-primary" onclick="startDevelopment()">Entwicklung starten (-5.000 €)</button>
+        <button type="button" class="btn btn-primary" id="btn-submit-dev" onclick="startDevelopment()">Entwicklung starten (-5.000 €)</button>
         <button type="button" class="btn btn-secondary" onclick="closeDevModal()">Abbrechen</button>
       </div>
     </div>
