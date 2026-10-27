@@ -12,8 +12,8 @@ function updateBankModalUI() {
     debtInfo.innerHTML = `
       <div style="background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--card-border);">
         <p><strong>${t('debt_label')}</strong> <span class="text-red" style="font-size: 1.1rem; font-weight: bold;">${formatMoney(currentLoan)}</span></p>
-        <p style="font-size: 0.85rem; color: #94a3b8;">Maximaler Kreditrahmen: ${formatMoney(max)}</p>
-        <p style="font-size: 0.85rem; color: var(--accent);">Wöchentliche Kreditzinsen (0.5%): ${formatMoney(weeklyInterest)}</p>
+        <p style="font-size: 0.85rem; color: #94a3b8;">${t("max_credit_limit", { amount: formatMoney(max) })}</p>
+        <p style="font-size: 0.85rem; color: var(--accent);">${t("weekly_interest", { rate: "0.5", cost: formatMoney(weeklyInterest) })}</p>
       </div>
     `;
   }

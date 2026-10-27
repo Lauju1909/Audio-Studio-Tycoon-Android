@@ -17,13 +17,13 @@ function renderResearchList() {
 
     div.innerHTML = `
       <div style="flex: 1; padding-right: 12px;">
-        <strong>${tech.name}</strong>
-        <p style="font-size: 0.85rem; color: #94a3b8;">${tech.desc}</p>
-        <span style="font-size: 0.75rem; color: var(--accent);">Verfügbar ab ${tech.year}</span>
+        <strong>${StudioState.language === "en" && tech.name_en ? tech.name_en : tech.name}</strong>
+        <p style="font-size: 0.85rem; color: #94a3b8;">${StudioState.language === "en" && tech.desc_en ? tech.desc_en : tech.desc}</p>
+        <span style="font-size: 0.75rem; color: var(--accent);">${t("available_from_year", { year: tech.year })}</span>
       </div>
       <div>
         ${isUnlocked ?
-          `<span class="badge" style="background: var(--green); color: #fff;">Erforscht</span>` :
+          `<span class="badge" style="background: var(--green); color: #fff;">${t("researched_badge")}</span>` :
           `<button class="btn btn-primary" style="padding: 8px 14px; font-size: 0.85rem;" ${!isYearAvailable ? 'disabled' : ''} onclick="doResearch('${tech.id}', ${tech.cost})">
             ${tech.cost} FP
           </button>`

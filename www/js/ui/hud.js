@@ -13,7 +13,7 @@ function updateHUD() {
   if (nameEl) nameEl.textContent = `🎙️ ${StudioState.studioName}`;
   if (dateEl) dateEl.textContent = t('date_format', { year: StudioState.year, week: StudioState.week });
   if (fansEl) fansEl.textContent = StudioState.fans.toLocaleString(StudioState.language === 'en' ? 'en-US' : 'de-DE');
-  if (rpEl) rpEl.textContent = `${StudioState.rp} FP`;
+  if (rpEl) rpEl.textContent = `${StudioState.rp} ${StudioState.language === "en" ? "RP" : "FP"}`;
 
   if (cashEl) {
     cashEl.textContent = formatMoney(StudioState.cash);
@@ -91,6 +91,12 @@ function toggleLanguage() {
 
 function applyLanguageToUI() {
   const lang = StudioState.language || 'de';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('ast_language', lang);
+    }
+  } catch (e) {}
+
   const btnLang = document.getElementById('btn-toggle-lang');
   if (btnLang) {
     btnLang.textContent = lang === 'en' ? '🇬🇧 EN' : '🇩🇪 DE';
@@ -100,6 +106,21 @@ function applyLanguageToUI() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     el.textContent = t(key);
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.setAttribute('placeholder', t(key));
+  });
+
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    el.setAttribute('title', t(key));
+  });
+
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const key = el.getAttribute('data-i18n-aria');
+    el.setAttribute('aria-label', t(key));
   });
 }
 

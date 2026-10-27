@@ -5,6 +5,165 @@
 
 const TRANSLATIONS = {
   de: {
+    "continue_endless": "Endlos-Modus fortsetzen",
+
+    "game_end_body": "Glückwunsch! Du hast die gesamte 96-jährige Ära der Audio-Spieleindustrie von 1930 bis 2026 erfolgreich durchlaufen!",
+
+    "game_end_title": "Historische Ära Vollendet (1930–2026)!",
+
+    "marketing_locked": "Marketing-Aktion erst ab Jahr {year} verfügbar!",
+
+    "tech_not_available_yet": "Technologie erst im Jahr {year} verfügbar!",
+
+    "theme_retro_desc": "Retro (8-Bit Chiptune)",
+
+    "theme_medieval_desc": "Mittelalter (Lauten & Trommeln)",
+
+    "theme_cyberpunk_desc": "Cyberpunk (Dunkler Darksynth)",
+
+    "theme_scifi_desc": "SciFi (Synthesizer & Laser-Effekte)",
+
+    "theme_fantasy_desc": "Fantasy (Epische Orchestermusik)",
+
+    "theme_horror_desc": "Horror (Düstere Klänge)",
+
+    "genre_strategy": "Strategie",
+
+    "genre_simulation": "Simulation",
+
+    "genre_casual": "Gelegenheit",
+
+    "genre_puzzle": "Rätsel & Logik",
+
+    "genre_action": "Action",
+
+    "platform_type_handheld": "Handheld",
+
+    "platform_type_computer": "Heimcomputer",
+
+    "platform_type_console": "Konsole",
+
+    "soundtrack_released_badge": "Veröffentlicht ({royalty}/Woche)",
+
+    "release_soundtrack": "Soundtrack veröffentlichen (-{cost})",
+
+    "hire_employee": "Einstellen",
+
+    "fire_employee": "Entlassen",
+
+    "send_vacation": "🏖️ Urlaub",
+
+    "available_status": "Verfügbar",
+
+    "on_vacation_status": "Im Urlaub ({weeks} W)",
+
+    "fatigue_label": "Erschöpfung: {fatigue}%",
+
+    "skill_label": "Skill: {skill}⭐",
+
+    "salary_label": "Gehalt: {salary}/Monat",
+
+    "research_button": "Erforschen",
+
+    "available_from_year": "Verfügbar ab {year}",
+
+    "researched_badge": "Erforscht",
+
+    "feedback_sent": "Vielen Dank! Dein Feedback wurde erfolgreich übertragen.",
+
+    "send_feedback": "📤 Absenden",
+
+    "feedback_msg_placeholder": "Was gefällt dir? Was sollen wir als Nächstes einbauen?",
+
+    "feedback_msg_label": "Deine Nachricht / Fehlerbericht / Spiel-Idee:",
+
+    "feedback_name_placeholder": "z. B. Alex oder Anonym",
+
+    "feedback_name_label": "Dein Name / Alias (optional):",
+
+    "feedback_modal_desc": "Dein Feedback landet direkt bei Entwickler Lauju in der Feedback-Zentrale.",
+
+    "feedback_modal_title": "💬 Feedback & Ideen senden",
+
+    "weekly_interest": "Wöchentliche Kreditzinsen ({rate}%): {cost}",
+    "max_credit_limit": "Maximaler Kreditrahmen: {amount}",
+
+    "repay_loan": "Kredit tilgen",
+
+    "take_loan": "Kredit aufnehmen",
+
+    "bank_modal_desc": "Kredite sichern dir Liquidität für Großproduktionen. Tilge Schulden rechtzeitig, um Zinskosten zu senken.",
+
+    "bank_modal_title": "🏦 Bank & Kreditfinanzierung",
+
+    "label_modal_desc": "Veröffentliche Soundtracks deiner Top-Spiele auf Vinyl, Kassette und Streaming-Plattformen für wöchentliche Tantiemen!",
+
+    "label_modal_title": "💿 Soundtrack-Plattenlabel",
+
+    "soundcon_keynote": "Große Keynote-Bühne",
+
+    "soundcon_medium": "Großer Messe-Pavillon",
+
+    "soundcon_small": "Kleiner Indie-Stand",
+
+    "soundcon_modal_desc": "Präsentiere dein Studio vor tausenden Audio-Gamer-Fans und Vertretern der Fachpresse!",
+
+    "soundcon_modal_title": "🎪 SoundCon Spielemesse",
+
+    "marketing_modal_desc": "Erhöhe den Hype vor dem Launch, um Verkaufserlöse und Fan-Zahlen drastisch zu steigern!",
+
+    "marketing_modal_title": "📣 Marketing & Hype-Kampagnen",
+
+    "hire_staff_title": "Verfügbare Fachkräfte anheuern:",
+
+    "staff_modal_desc": "Erschöpfte Mitarbeiter machen Fehler. Schicke gestresste Entwickler in den Urlaub!",
+
+    "staff_modal_title": "👥 Personalmanagement & Erholung",
+
+    "build_engine_btn": "Neue Engine fertigen",
+
+    "engine_name_placeholder": "Engine-Name (z. B. SonicPulse V1)...",
+
+    "engine_modal_desc": "Baue moderne proprietäre Sound-Engines, die all deine erforschten Audio-Features bündeln.",
+
+    "engine_modal_title": "🛠️ Engine-Werkstatt",
+
+    "research_modal_desc": "Erforsche revolutionäre Sound-Technologien, um Wertungen zu maximieren und neue Engines zu bauen.",
+
+    "research_modal_title": "🔬 Forschung & Audio-Technologie",
+
+    "start_dev_btn": "Entwicklung starten",
+
+    "team_assignment_label": "Team-Zuweisung & Mitarbeiter:",
+
+    "focus_gameplay_label": "Fokus: Gameplay & Spieltiefe (Höher = Komplexer):",
+
+    "focus_sound_label": "Fokus: Audio & Klangkulisse (Höher = Immersiver):",
+
+    "engine_label": "Audio-Engine wählen:",
+
+    "genre_label": "Genre:",
+
+    "theme_label": "Thema:",
+
+    "random_title": "Zufälliger Titel",
+
+    "title_placeholder": "Spielname eingeben...",
+
+    "dev_wizard_title": "🎮 Neues Audio-Game konzipieren",
+
+    "event_dismiss_label": "Ereignis schließen",
+
+    "dismiss": "Schließen",
+
+    "cancel": "Abbrechen",
+
+    "close": "Schließen",
+
+    "reset_game_title": "Spielstand zurücksetzen",
+
+    "save_game_title": "Spielstand sichern",
+
   "app_title": "Audio Studio Tycoon",
   "cash_label": "Guthaben:",
   "fans_label": "Fans:",
@@ -166,6 +325,165 @@ const TRANSLATIONS = {
   "event_2026": "Neural-Sync Standard. Das Spiel endet hier."
 },
   en: {
+    "continue_endless": "Continue Endless Mode",
+
+    "game_end_body": "Congratulations! You successfully mastered the entire 96-year evolution of the audio gaming industry from 1930 to 2026!",
+
+    "game_end_title": "Historical Era Completed (1930–2026)!",
+
+    "marketing_locked": "Marketing campaign only available from year {year}!",
+
+    "tech_not_available_yet": "Technology only available in year {year}!",
+
+    "theme_retro_desc": "Retro (8-Bit chiptune)",
+
+    "theme_medieval_desc": "Medieval (Lutes & drums)",
+
+    "theme_cyberpunk_desc": "Cyberpunk (Dark synthwave)",
+
+    "theme_scifi_desc": "SciFi (Synthesizers & laser fx)",
+
+    "theme_fantasy_desc": "Fantasy (Epic orchestral)",
+
+    "theme_horror_desc": "Horror (Dark soundscape)",
+
+    "genre_strategy": "Strategy",
+
+    "genre_simulation": "Simulation",
+
+    "genre_casual": "Casual",
+
+    "genre_puzzle": "Puzzle & Logic",
+
+    "genre_action": "Action",
+
+    "platform_type_handheld": "Handheld",
+
+    "platform_type_computer": "Home Computer",
+
+    "platform_type_console": "Console",
+
+    "soundtrack_released_badge": "Released ({royalty}/wk)",
+
+    "release_soundtrack": "Release Soundtrack (-{cost})",
+
+    "hire_employee": "Hire",
+
+    "fire_employee": "Dismiss",
+
+    "send_vacation": "🏖️ Vacation",
+
+    "available_status": "Available",
+
+    "on_vacation_status": "On Vacation ({weeks} w)",
+
+    "fatigue_label": "Fatigue: {fatigue}%",
+
+    "skill_label": "Skill: {skill}⭐",
+
+    "salary_label": "Salary: {salary}/mo",
+
+    "research_button": "Research",
+
+    "available_from_year": "Available from {year}",
+
+    "researched_badge": "Researched",
+
+    "feedback_sent": "Thank you! Your feedback has been sent successfully.",
+
+    "send_feedback": "📤 Submit",
+
+    "feedback_msg_placeholder": "What do you like? What should we add next?",
+
+    "feedback_msg_label": "Your message / bug report / game idea:",
+
+    "feedback_name_placeholder": "e.g. Alex or Anonymous",
+
+    "feedback_name_label": "Your Name / Alias (optional):",
+
+    "feedback_modal_desc": "Your feedback goes directly to developer Lauju.",
+
+    "feedback_modal_title": "💬 Send Feedback & Ideas",
+
+    "weekly_interest": "Weekly loan interest ({rate}%): {cost}",
+
+    "max_credit_limit": "Maximum credit limit: {amount}",
+
+    "repay_loan": "Repay Loan",
+
+    "take_loan": "Take Loan",
+
+    "bank_modal_desc": "Loans secure liquidity for major productions. Repay debt in time to reduce interest costs.",
+
+    "bank_modal_title": "🏦 Bank & Loan Financing",
+
+    "label_modal_desc": "Release original soundtracks of your top games on vinyl, cassette, and streaming platforms for weekly royalties!",
+
+    "label_modal_title": "💿 Original Soundtrack Label",
+
+    "soundcon_keynote": "Main Keynote Stage",
+
+    "soundcon_medium": "Large Exhibition Pavilion",
+
+    "soundcon_small": "Small Indie Booth",
+
+    "soundcon_modal_desc": "Present your studio before thousands of audio gamers and gaming journalists!",
+
+    "soundcon_modal_title": "🎪 SoundCon Games Expo",
+
+    "marketing_modal_desc": "Build pre-launch hype to drastically boost game sales and fan base!",
+
+    "marketing_modal_title": "📣 Marketing & Hype Campaigns",
+
+    "hire_staff_title": "Hire Available Specialists:",
+
+    "staff_modal_desc": "Exhausted employees make bugs. Send stressed developers on vacation!",
+
+    "staff_modal_title": "👥 Staff Management & Vacation",
+
+    "build_engine_btn": "Build New Engine",
+
+    "engine_name_placeholder": "Engine name (e.g. SonicPulse V1)...",
+
+    "engine_modal_desc": "Build custom proprietary sound engines bundling your researched audio features.",
+
+    "engine_modal_title": "🛠️ Engine Workshop",
+
+    "research_modal_desc": "Research cutting-edge sound technologies to maximize review scores and build new engines.",
+
+    "research_modal_title": "🔬 Research & Audio Technology",
+
+    "start_dev_btn": "Start Development",
+
+    "team_assignment_label": "Team Assignment & Staff:",
+
+    "focus_gameplay_label": "Focus: Gameplay & Depth (Higher = More complex):",
+
+    "focus_sound_label": "Focus: Audio & Soundscape (Higher = More immersive):",
+
+    "engine_label": "Select Audio Engine:",
+
+    "genre_label": "Genre:",
+
+    "theme_label": "Theme:",
+
+    "random_title": "Random Title",
+
+    "title_placeholder": "Enter game title...",
+
+    "dev_wizard_title": "🎮 Design New Audio Game",
+
+    "event_dismiss_label": "Dismiss event",
+
+    "dismiss": "Dismiss",
+
+    "cancel": "Cancel",
+
+    "close": "Close",
+
+    "reset_game_title": "Reset Game",
+
+    "save_game_title": "Save Game",
   "app_title": "Audio Studio Tycoon",
   "cash_label": "Cash:",
   "fans_label": "Fans:",

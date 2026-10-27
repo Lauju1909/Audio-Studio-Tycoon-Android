@@ -25,7 +25,19 @@ function createDefaultState(startYear = 1930) {
     rp: 15,
     loan: 0,
     loanInterestRate: 0.005,
-    language: "de",
+        // Automatische Spracherkennung: 'de' für Deutsch, 'en' für alle anderen
+    language: (() => {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const saved = localStorage.getItem('ast_language');
+          if (saved) return saved;
+        }
+        const nav = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages[0]) || navigator.language)) || '';
+        return nav.toLowerCase().startsWith('de') ? 'de' : 'en';
+      } catch (e) {
+        return 'en';
+      }
+    })(),
     unlockedTech: [],
     unlockedFeatures: [],
     unlockedPlatforms: initPlatforms,

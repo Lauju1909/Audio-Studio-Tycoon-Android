@@ -23,10 +23,10 @@ function renderStaffList() {
       <div>
         <strong>${emp.name} (${roleName})</strong>
         <p style="font-size: 0.8rem; color: #94a3b8;">
-          Gehalt: ${formatMoney(emp.salary)}/Monat • Skill: ${emp.skill}⭐ • Erschöpfung: ${emp.fatigue}%
+          ${t("salary_label", { salary: formatMoney(emp.salary) })} • ${t("skill_label", { skill: emp.skill })} • ${t("fatigue_label", { fatigue: emp.fatigue })}
         </p>
         <span class="badge" style="background: ${isVacation ? 'var(--accent)' : 'var(--card-border)'};">
-          ${isVacation ? `Im Urlaub (${emp.onVacationWeeks} W)` : 'Verfügbar'}
+          ${isVacation ? t("on_vacation_status", { weeks: emp.onVacationWeeks }) : t("available_status")}
         </span>
       </div>
       <div style="display: flex; gap: 6px;">

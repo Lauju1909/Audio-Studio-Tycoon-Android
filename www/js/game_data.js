@@ -16,13 +16,13 @@ const THEME_GENRE_SYNERGIES = {
 };
 
 const RESEARCH_CATALOG = [
-  { id: 'chiptune', name: 'Synthesizer Chiptune Modul', cost: 15, year: 1980, desc: '+20% Audio-Punkte bei Retro- & Cyberpunk-Titeln', effect: { audioPct: 20, themes: ['Retro', 'Cyberpunk'] } },
-  { id: 'polyphonic', name: 'Polyphone Sound-Synthese', cost: 25, year: 1982, desc: 'Schaltet mehrstimmige Audio-Spuren für alle Genres frei (+15 Audio)', effect: { flatAudio: 15 } },
-  { id: 'dsp_effects', name: 'DSP-Effektprozessor (Reverb/Chorus)', cost: 40, year: 1985, desc: 'Erhöht Audio-Punkte um 20% und senkt Bug-Rate um 20%', effect: { audioPct: 20, bugReduction: 0.20 } },
-  { id: 'surround_51', name: '5.1 Surround Sound System', cost: 60, year: 1992, desc: 'Enormer Hype- und Wertungsbonus bei Action & Horror (+15%)', effect: { scorePct: 15, genres: ['Action', 'Horror'] } },
-  { id: 'binaural_3d', name: 'Binaurale 3D-Audio-Engine', cost: 80, year: 2000, desc: 'Kopfhörer-Raumklang für Screenreader & Gamer (+30% Audio & +50% Fans)', effect: { audioPct: 30, fanMultiplier: 1.5 } },
-  { id: 'ai_composition', name: 'KI-Prozedurale Soundtrack-Engine', cost: 120, year: 2015, desc: 'Beschleunigt Entwicklung um 25% und erhöht Soundtrack-Tantiemen um 35%', effect: { speedBoost: 0.25, labelRoyaltyPct: 35 } },
-  { id: 'raytracing_audio', name: 'Echtzeit-Acoustic Raytracing', cost: 160, year: 2020, desc: 'Physikalisch korrekte Schallwellen-Berechnung (+25 Gesamt-Wertungspunkte)', effect: { flatScore: 25 } }
+  { id: 'chiptune', name: 'Synthesizer Chiptune Modul', cost: 15, year: 1980, desc: '+20% Audio-Punkte bei Retro- & Cyberpunk-Titeln', effect: { audioPct: 20, themes: ['Retro', 'Cyberpunk'] , name_en: "Synthesizer Chiptune Module", desc_en: "+20% Audio Points for Retro & Cyberpunk titles"} },
+  { id: 'polyphonic', name: 'Polyphone Sound-Synthese', cost: 25, year: 1982, desc: 'Schaltet mehrstimmige Audio-Spuren für alle Genres frei (+15 Audio)', effect: { flatAudio: 15 , name_en: "Polyphonic Sound Synthesis", desc_en: "Unlocks multi-channel audio tracks for all genres (+15 Audio)"} },
+  { id: 'dsp_effects', name: 'DSP-Effektprozessor (Reverb/Chorus)', cost: 40, year: 1985, desc: 'Erhöht Audio-Punkte um 20% und senkt Bug-Rate um 20%', effect: { audioPct: 20, bugReduction: 0.20 , name_en: "DSP Effects Processor (Reverb/Chorus)", desc_en: "Increases Audio Points by 20% and reduces bug rate by 20%"} },
+  { id: 'surround_51', name: '5.1 Surround Sound System', cost: 60, year: 1992, desc: 'Enormer Hype- und Wertungsbonus bei Action & Horror (+15%)', effect: { scorePct: 15, genres: ['Action', 'Horror'] , name_en: "5.1 Surround Sound System", desc_en: "Huge hype and score bonus for Action & Horror (+15%)"} },
+  { id: 'binaural_3d', name: 'Binaurale 3D-Audio-Engine', cost: 80, year: 2000, desc: 'Kopfhörer-Raumklang für Screenreader & Gamer (+30% Audio & +50% Fans)', effect: { audioPct: 30, fanMultiplier: 1.5 , name_en: "Binaural 3D Audio Engine", desc_en: "3D spatial headphone audio for screenreaders & gamers (+30% Audio & +50% Fans)"} },
+  { id: 'ai_composition', name: 'KI-Prozedurale Soundtrack-Engine', cost: 120, year: 2015, desc: 'Beschleunigt Entwicklung um 25% und erhöht Soundtrack-Tantiemen um 35%', effect: { speedBoost: 0.25, labelRoyaltyPct: 35 , name_en: "AI Procedural Soundtrack Engine", desc_en: "Speeds up dev by 25% and boosts soundtrack royalties by 35%"} },
+  { id: 'raytracing_audio', name: 'Echtzeit-Acoustic Raytracing', cost: 160, year: 2020, desc: 'Physikalisch korrekte Schallwellen-Berechnung (+25 Gesamt-Wertungspunkte)', effect: { flatScore: 25 , name_en: "Realtime Acoustic Raytracing", desc_en: "Physically accurate soundwave calculation (+25 total review score points)"} }
 ];
 
 const RANDOM_TITLES = {
