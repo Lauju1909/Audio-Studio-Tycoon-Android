@@ -50,10 +50,17 @@
   <section class="timeline-bar-container" aria-label="Historischer Zeitstrahl">
     <div class="timeline-info-row">
       <span id="timeline-current-era-text" style="font-size: 0.82rem; font-weight: 600; color: #a5b4fc;">Pionier-Ära (1930–1949)</span>
+      <span id="hud-trend-badge" class="badge" style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.18); color: #fde68a;">🔥 Trend: Radio-Drama + Action</span>
       <span id="timeline-progress-label" style="font-size: 0.8rem; color: #94a3b8;">1930 / 2026</span>
     </div>
     <div class="progress-bar-container" style="height: 6px; margin-top: 4px;" aria-hidden="true">
       <div class="progress-bar-fill" id="timeline-progress-fill" style="width: 0%; background: linear-gradient(90deg, #6366f1, #a855f7);"></div>
+    </div>
+    <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;" role="group" aria-label="Zeitsteuerung">
+      <button type="button" class="btn btn-secondary" id="btn-time-pause" style="padding: 4px 10px; font-size: 0.78rem;" onclick="togglePause()">⏸️ Pause</button>
+      <button type="button" class="btn btn-secondary" id="btn-time-1x" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setGameSpeed(1)">▶️ 1x</button>
+      <button type="button" class="btn btn-secondary" id="btn-time-2x" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setGameSpeed(2)">⏩ 2x</button>
+      <button type="button" class="btn btn-primary" id="btn-time-next" style="padding: 4px 10px; font-size: 0.78rem;" onclick="manualTickWeek()">⏭️ +1 Woche</button>
     </div>
   </section>
 
@@ -72,6 +79,9 @@
       </div>
     </div>
 
+    <!-- AKTIVER AUFTRAG -->
+    <div id="active-contract-card" class="card" style="display: none; border-left: 3px solid var(--green); margin-bottom: 12px; font-size: 0.88rem;" aria-live="polite"></div>
+
     <!-- AKTIVES PROJEKT (WENN EIN SPIEL ENTWICKELT WIRD) -->
     <div id="active-project-card" class="card active-dev-card" style="display: none;" aria-live="polite">
       <div class="card-header">
@@ -86,7 +96,15 @@
         <div>🎵 Audio-Punkte: <strong id="dev-pts-sound">0</strong></div>
         <div>🐛 Bugs: <strong id="dev-pts-bugs" class="text-red">0</strong></div>
       </div>
-      <button type="button" class="btn btn-dev-action" id="btn-finish-dev" onclick="finishDevelopment()" style="display: none;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+        <button type="button" class="btn btn-secondary" id="btn-polish-dev" onclick="polishActiveProject()" style="font-size: 0.82rem; padding: 6px 10px;">
+          🔧 QA-Feinschliff &amp; Mastering (-1.200 €)
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-boost-dev" onclick="boostActiveProjectAudio()" style="font-size: 0.82rem; padding: 6px 10px;">
+          🎙️ Live-Akustik-Session (-2.000 €)
+        </button>
+      </div>
+      <button type="button" class="btn btn-dev-action" id="btn-finish-dev" onclick="finishDevelopment()" style="display: none; margin-top: 8px;">
         <span data-i18n="finish_publish">✨ Spiel fertigstellen &amp; Veröffentlichen</span>
       </button>
     </div>
@@ -98,6 +116,14 @@
         <div class="action-info">
           <h3 data-i18n="new_game">Neues Spiel entwickeln</h3>
           <p data-i18n="new_game_desc">Thema, Genre, Sound-Engine und Schwerpunkte wählen</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" id="btn-action-contracts" onclick="openContractsModal()">
+        <span class="action-icon">📋</span>
+        <div class="action-info">
+          <h3 data-i18n="contracts">Auftragsarbeiten</h3>
+          <p data-i18n="contracts_desc">Radio-Jingles, Hörspiel-Foley &amp; Mastering für sicheres Sofortgeld</p>
         </div>
       </button>
 
@@ -212,6 +238,17 @@
       </div>
 
       <div class="form-group">
+        <label for="select-sequel">Reihe / Fortsetzung:</label>
+        <select id="select-sequel">
+          <option value="">Neue Original-Produktion</option>
+        </select>
+      </div>
+
+      <div id="dev-synergy-preview" class="badge" style="display: block; padding: 8px 10px; margin-bottom: 10px; background: rgba(99, 102, 241, 0.15); color: #e0e7ff; font-size: 0.82rem;" aria-live="polite">
+        ⭐⭐⭐ Thema + Genre Synergie-Vorschau
+      </div>
+
+      <div class="form-group">
         <label for="select-platform" data-i18n="platform_label">Ziel-Plattform:</label>
         <select id="select-platform">
           <!-- Dynamisch nach Jahr gefiltert -->
@@ -233,19 +270,34 @@
       </div>
 
       <div class="form-group">
-        <label for="slider-gameplay">Fokus: Gameplay vs. Story (50 = Ausgeglichen):</label>
-        <input type="range" id="slider-gameplay" min="0" max="100" value="50">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label for="slider-gameplay">Fokus: Gameplay &amp; Mechanik (<span id="val-gameplay">50%</span>):</label>
+          <button type="button" class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.74rem;" onclick="applyIdealGenreSliders(true)">✨ Ideale Genre-Slider</button>
+        </div>
+        <input type="range" id="slider-gameplay" min="0" max="100" value="50" oninput="document.getElementById('val-gameplay').textContent = this.value + '%'">
       </div>
 
       <div class="form-group">
-        <label for="slider-sound" data-i18n="focus_sound_label">Fokus: Audio &amp; Klangkulisse (Höher = Immersiver):</label>
-        <input type="range" id="slider-sound" min="20" max="100" value="70">
+        <label for="slider-sound" data-i18n="focus_sound_label">Fokus: Audio &amp; Klangkulisse (<span id="val-sound">70%</span>):</label>
+        <input type="range" id="slider-sound" min="20" max="100" value="70" oninput="document.getElementById('val-sound').textContent = this.value + '%'">
       </div>
 
       <div class="modal-actions">
         <button type="button" class="btn btn-primary" id="btn-submit-dev" onclick="startDevelopment()">Entwicklung starten (-5.000 €)</button>
         <button type="button" class="btn btn-secondary" onclick="closeDevModal()" data-i18n="cancel">Abbrechen</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUFTRAGSARBEITEN -->
+  <div id="modal-contracts" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contracts-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="contracts-title" data-i18n="contracts_modal_title">📋 Auftragsarbeiten &amp; Tonstudio-Jobs</h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;" data-i18n="contracts_modal_desc">Produziere Radio-Jingles, Hörspiel-Geräuschkulissen und Masterings für sichere Einnahmen und Forschungspunkte.</p>
+      <div id="contracts-list" class="staff-list">
+        <!-- Dynamisch -->
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeContractsModal()" style="margin-top: 12px;" data-i18n="close">Schließen</button>
     </div>
   </div>
 

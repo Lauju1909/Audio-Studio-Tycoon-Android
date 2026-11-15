@@ -171,6 +171,10 @@ const TRANSLATIONS = {
   "debt_label": "Schulden:",
   "new_game": "Neues Spiel entwickeln",
   "new_game_desc": "Thema, Genre, Audio-Engine & Team wählen",
+  "contracts": "Auftragsarbeiten",
+  "contracts_desc": "Radio-Jingles, Hörspiel-Foley & Mastering für sicheres Sofortgeld",
+  "contracts_modal_title": "📋 Auftragsarbeiten & Tonstudio-Jobs",
+  "contracts_modal_desc": "Produziere Radio-Jingles, Hörspiel-Geräuschkulissen und Masterings für sichere Einnahmen und Forschungspunkte.",
   "research": "Forschungslabor",
   "research_desc": "Audio-Technologien & Engines freischalten",
   "custom_engine": "Engine-Werkstatt",
@@ -326,6 +330,10 @@ const TRANSLATIONS = {
 },
   en: {
     "continue_endless": "Continue Endless Mode",
+    "contracts": "Contract Work",
+    "contracts_desc": "Radio jingles, drama foley & mastering for steady cashflow",
+    "contracts_modal_title": "📋 Contract Work & Studio Jobs",
+    "contracts_modal_desc": "Produce radio jingles, audio drama foley and masterings for guaranteed revenue and research points.",
 
     "game_end_body": "Congratulations! You successfully mastered the entire 96-year evolution of the audio gaming industry from 1930 to 2026!",
 

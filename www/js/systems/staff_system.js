@@ -7,15 +7,43 @@ function renderStaffList() {
   if (!container) return;
   container.innerHTML = '';
 
+  const isEn = StudioState.language === 'en';
+  const catalog = (typeof OFFICE_UPGRADES_CATALOG !== 'undefined') ? OFFICE_UPGRADES_CATALOG : [];
+  const curLevel = StudioState.officeLevel || 0;
+  const curOffice = catalog[curLevel] || { name: 'Hinterhof-Tonkabine (Garage)', name_en: 'Backyard Sound Booth (Garage)', maxStaff: 4, qualityBonus: 0 };
+  const nextOffice = catalog[curLevel + 1];
+
+  const officeBox = document.createElement('div');
+  officeBox.className = 'staff-item';
+  officeBox.style.marginBottom = '10px';
+  officeBox.style.borderLeft = '3px solid var(--accent)';
+  officeBox.innerHTML = `
+    <div>
+      <strong>🏢 ${isEn ? curOffice.name_en : curOffice.name}</strong>
+      <p style="font-size: 0.8rem; color: #94a3b8;">
+        ${isEn ? 'Capacity' : 'Kapazität'}: ${StudioState.staff.length}/${curOffice.maxStaff} • ${isEn ? 'Quality Bonus' : 'Qualitätsbonus'}: +${Math.round((curOffice.qualityBonus || 0) * 100)}%
+      </p>
+    </div>
+    ${nextOffice ? `
+      <button class="btn btn-primary" style="padding: 6px 10px; font-size: 0.8rem;" onclick="upgradeStudioOffice(); renderStaffList();">
+        ⬆️ ${isEn ? 'Upgrade' : 'Ausbauen'} (${formatMoney(nextOffice.cost)})
+      </button>
+    ` : `<span class="badge">${isEn ? 'Max Level' : 'Max. Stufe'}</span>`}
+  `;
+  container.appendChild(officeBox);
+
   if (StudioState.staff.length === 0) {
-    container.innerHTML = `<p class="empty-hint">${StudioState.language === 'en' ? 'No staff hired yet.' : 'Bisher keine Mitarbeiter angestellt.'}</p>`;
+    const emptyP = document.createElement('p');
+    emptyP.className = 'empty-hint';
+    emptyP.textContent = isEn ? 'No staff hired yet.' : 'Bisher keine Mitarbeiter angestellt.';
+    container.appendChild(emptyP);
     return;
   }
 
   StudioState.staff.forEach(emp => {
     const isVacation = emp.onVacationWeeks > 0;
-    const roleName = emp.role === 'sound' ? (StudioState.language === 'en' ? 'Sound Designer' : 'Audio-Designer') :
-                     emp.role === 'coder' ? (StudioState.language === 'en' ? 'Programmer' : 'Programmierer') : (StudioState.language === 'en' ? 'Writer' : 'Autor');
+    const roleName = emp.role === 'sound' ? (isEn ? 'Sound Designer' : 'Audio-Designer') :
+                     emp.role === 'coder' ? (isEn ? 'Programmer' : 'Programmierer') : (isEn ? 'Writer' : 'Autor');
 
     const card = document.createElement('div');
     card.className = 'staff-item';
@@ -29,17 +57,44 @@ function renderStaffList() {
           ${isVacation ? t("on_vacation_status", { weeks: emp.onVacationWeeks }) : t("available_status")}
         </span>
       </div>
-      <div style="display: flex; gap: 6px;">
+      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" ${emp.skill >= 10 ? 'disabled' : ''} onclick="trainStaffMember(${emp.id})">
+          🎓 ${isEn ? 'Train (2,500)' : 'Schulen (2.500 €)'}
+        </button>
         <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" ${isVacation ? 'disabled' : ''} onclick="sendStaffVacation(${emp.id})">
-          🏖️ Urlaub
+          🏖️ ${isEn ? 'Vacation' : 'Urlaub'}
         </button>
         <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; color: var(--red);" onclick="fireStaff(${emp.id})">
-          ❌ Feuern
+          ❌ ${isEn ? 'Fire' : 'Feuern'}
         </button>
       </div>
     `;
     container.appendChild(card);
   });
+}
+
+function trainStaffMember(empId) {
+  const emp = StudioState.staff.find(e => e.id === empId);
+  if (!emp) return false;
+  const isEn = StudioState.language === 'en';
+  const cost = 2500;
+  if (emp.skill >= 10) return false;
+  if (StudioState.cash < cost) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(cost) }));
+    }
+    return false;
+  }
+  StudioState.cash -= cost;
+  emp.skill = Math.min(10, (emp.skill || 1) + 1);
+  renderStaffList();
+  if (typeof updateHUD === 'function') updateHUD();
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('success');
+    AudioEngine.speak(isEn ? `${emp.name} trained to Skill Level ${emp.skill}!` : `${emp.name} auf Skill-Stufe ${emp.skill} geschult!`);
+  }
+  return true;
 }
 
 function sendStaffVacation(empId) {
@@ -70,6 +125,19 @@ function fireStaff(empId) {
 }
 
 function hireNewCandidate(role) {
+  const isEn = StudioState.language === 'en';
+  const catalog = (typeof OFFICE_UPGRADES_CATALOG !== 'undefined') ? OFFICE_UPGRADES_CATALOG : [];
+  const curOffice = catalog[StudioState.officeLevel || 0] || { maxStaff: 4 };
+  if (StudioState.staff.length >= curOffice.maxStaff) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn
+        ? `Studio capacity reached (${curOffice.maxStaff}/${curOffice.maxStaff})! Upgrade your studio first.`
+        : `Studio-Kapazität erreicht (${curOffice.maxStaff}/${curOffice.maxStaff})! Baue zuerst dein Tonstudio aus.`);
+    }
+    return false;
+  }
+
   const names = ["Felix Bach", "Elena Rhythmus", "Klaus Bass", "Julia Synthesizer", "David Code", "Sarah Script", "Linus Pixel", "Anna Story"];
   const randomName = names[Math.floor(Math.random() * names.length)];
   const salary = role === 'sound' ? 1600 : (role === 'coder' ? 1500 : 1300);
@@ -97,10 +165,12 @@ function hireNewCandidate(role) {
     }));
   }
   if (typeof updateHUD === 'function') updateHUD();
+  return true;
 }
 
 if (typeof window !== 'undefined') {
   window.renderStaffList = renderStaffList;
+  window.trainStaffMember = trainStaffMember;
   window.sendStaffVacation = sendStaffVacation;
   window.fireStaff = fireStaff;
   window.hireNewCandidate = hireNewCandidate;

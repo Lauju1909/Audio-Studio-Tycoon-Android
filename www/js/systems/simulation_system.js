@@ -8,11 +8,169 @@ function startWeeklyLoop() {
     clearInterval(StudioState.timerInterval);
     StudioState.timerInterval = null;
   }
+  const speed = Math.max(0.5, Number(StudioState.gameSpeed) || 1);
+  const intervalMs = Math.round(3500 / speed);
   StudioState.timerInterval = setInterval(() => {
     if (!StudioState.isPaused) {
       tickWeek();
     }
-  }, 3500);
+  }, intervalMs);
+}
+
+function togglePause() {
+  StudioState.isPaused = !StudioState.isPaused;
+  const isEn = StudioState.language === 'en';
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('click');
+    AudioEngine.speak(StudioState.isPaused
+      ? (isEn ? 'Simulation paused' : 'Simulation pausiert')
+      : (isEn ? 'Simulation resumed' : 'Simulation läuft weiter'));
+  }
+  if (typeof updateHUD === 'function') updateHUD();
+  return StudioState.isPaused;
+}
+
+function setGameSpeed(speed) {
+  StudioState.gameSpeed = Number(speed) || 1;
+  StudioState.isPaused = false;
+  startWeeklyLoop();
+  const isEn = StudioState.language === 'en';
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('click');
+    AudioEngine.speak(isEn ? `Game speed: ${StudioState.gameSpeed}x` : `Spielgeschwindigkeit: ${StudioState.gameSpeed}x`);
+  }
+  if (typeof updateHUD === 'function') updateHUD();
+  return StudioState.gameSpeed;
+}
+
+function manualTickWeek() {
+  tickWeek();
+  const isEn = StudioState.language === 'en';
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('click');
+    AudioEngine.speak(isEn
+      ? `Advanced to Year ${StudioState.year}, Week ${StudioState.week}. Cash: ${formatMoney(StudioState.cash)}`
+      : `Weiter zu Jahr ${StudioState.year}, Woche ${StudioState.week}. Kontostand: ${formatMoney(StudioState.cash)}`);
+  }
+}
+
+function acceptContract(contractId) {
+  const isEn = StudioState.language === 'en';
+  if (StudioState.activeContract) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn ? 'A contract is already in progress!' : 'Es läuft bereits eine Auftragsarbeit!');
+    }
+    return false;
+  }
+  const catalog = (typeof CONTRACTS_CATALOG !== 'undefined') ? CONTRACTS_CATALOG : [];
+  const spec = catalog.find(c => c.id === contractId) || catalog[0];
+  if (!spec) return false;
+
+  const eraScale = (StudioState.year >= 1990) ? 2.5 : (StudioState.year >= 1970 ? 1.6 : 1.0);
+  const scaledReward = Math.round((spec.reward * eraScale) / 100) * 100;
+  const scaledPenalty = Math.round((spec.penalty * eraScale) / 100) * 100;
+
+  StudioState.activeContract = {
+    id: spec.id,
+    name: spec.name,
+    name_en: spec.name_en,
+    category: spec.category,
+    reward: scaledReward,
+    penalty: scaledPenalty,
+    requiredPoints: spec.requiredPoints,
+    currentPoints: 0,
+    weeksLeft: spec.weeks
+  };
+
+  if (typeof closeContractsModal === 'function') closeContractsModal();
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('confirm');
+    const cName = isEn ? spec.name_en : spec.name;
+    AudioEngine.speak(isEn
+      ? `Contract accepted: ${cName} (${formatMoney(scaledReward)}, ${spec.weeks} weeks)`
+      : `Auftrag angenommen: ${cName} (${formatMoney(scaledReward)}, ${spec.weeks} Wochen)`);
+  }
+  if (typeof updateHUD === 'function') updateHUD();
+  return true;
+}
+
+function tickContractProgress() {
+  const ac = StudioState.activeContract;
+  if (!ac) return;
+  const isEn = StudioState.language === 'en';
+
+  let teamPts = 15;
+  if (Array.isArray(StudioState.staff)) {
+    StudioState.staff.forEach(emp => {
+      if ((emp.onVacationWeeks || 0) <= 0) {
+        teamPts += (emp.skill || 1) * 8;
+      }
+    });
+  }
+  ac.currentPoints += teamPts;
+
+  if (ac.currentPoints >= ac.requiredPoints) {
+    StudioState.cash += ac.reward;
+    StudioState.rp += 2;
+    const cName = isEn ? (ac.name_en || ac.name) : ac.name;
+    const reward = ac.reward;
+    StudioState.activeContract = null;
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('cash');
+      AudioEngine.speak(isEn
+        ? `Contract "${cName}" completed! Earned ${formatMoney(reward)} and +2 RP!`
+        : `Auftragsarbeit "${cName}" abgeschlossen! ${formatMoney(reward)} und +2 FP erhalten!`);
+    }
+  } else {
+    ac.weeksLeft--;
+    if (ac.weeksLeft <= 0) {
+      StudioState.cash -= ac.penalty;
+      const cName = isEn ? (ac.name_en || ac.name) : ac.name;
+      const pen = ac.penalty;
+      StudioState.activeContract = null;
+      if (typeof AudioEngine !== 'undefined') {
+        AudioEngine.playSound('error');
+        AudioEngine.speak(isEn
+          ? `Contract "${cName}" missed deadline! Penalty: -${formatMoney(pen)}`
+          : `Auftragsfrist für "${cName}" abgelaufen! Vertragsstrafe: -${formatMoney(pen)}`);
+      }
+    }
+  }
+}
+
+function upgradeStudioOffice() {
+  const isEn = StudioState.language === 'en';
+  const catalog = (typeof OFFICE_UPGRADES_CATALOG !== 'undefined') ? OFFICE_UPGRADES_CATALOG : [];
+  const nextLevel = (StudioState.officeLevel || 0) + 1;
+  const nextSpec = catalog[nextLevel];
+  if (!nextSpec) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn ? 'Maximum studio campus level already reached!' : 'Maximale Studio-Ausbaustufe bereits erreicht!');
+    }
+    return false;
+  }
+  if (StudioState.cash < nextSpec.cost) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(nextSpec.cost) }));
+    }
+    return false;
+  }
+  StudioState.cash -= nextSpec.cost;
+  StudioState.officeLevel = nextLevel;
+  StudioState.prestige = (StudioState.prestige || 0) + 10;
+  const oName = isEn ? nextSpec.name_en : nextSpec.name;
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('success');
+    AudioEngine.speak(isEn
+      ? `Upgraded studio to ${oName}! Max staff: ${nextSpec.maxStaff}, Quality bonus: +${Math.round(nextSpec.qualityBonus * 100)}%!`
+      : `Tonstudio ausgebaut zu ${oName}! Max. Team: ${nextSpec.maxStaff}, Qualitätsbonus: +${Math.round(nextSpec.qualityBonus * 100)}%!`);
+  }
+  if (typeof renderStaffList === 'function') renderStaffList();
+  if (typeof updateHUD === 'function') updateHUD();
+  return true;
 }
 
 function processAnnualTransition() {
@@ -87,6 +245,14 @@ function processAnnualTransition() {
       case 'story_boost':
       case 'multiplayer_boost':
         StudioState.qualityStandardMulti = (StudioState.qualityStandardMulti || 1.0) * val;
+        break;
+      case 'trend':
+        if (val && typeof val === 'object') {
+          StudioState.currentTrend = {
+            topic: val.topic || (StudioState.currentTrend ? StudioState.currentTrend.topic : 'Radio-Drama'),
+            genre: val.genre || (StudioState.currentTrend ? StudioState.currentTrend.genre : 'Action')
+          };
+        }
         break;
       case 'trend_topic':
         if (!StudioState.currentTrend) StudioState.currentTrend = {};
@@ -313,6 +479,11 @@ function tickWeek() {
     if (typeof tickProjectProgress === 'function') tickProjectProgress();
   }
 
+  // 6. Active Contract Work Progress
+  if (StudioState.activeContract) {
+    tickContractProgress();
+  }
+
   // Auto-save every 4 weeks
   if (StudioState.week % 4 === 0) {
     if (typeof saveGame === 'function') saveGame();
@@ -323,10 +494,20 @@ function tickWeek() {
 
 if (typeof window !== 'undefined') {
   window.startWeeklyLoop = startWeeklyLoop;
+  window.togglePause = togglePause;
+  window.setGameSpeed = setGameSpeed;
+  window.manualTickWeek = manualTickWeek;
+  window.acceptContract = acceptContract;
+  window.tickContractProgress = tickContractProgress;
+  window.upgradeStudioOffice = upgradeStudioOffice;
   window.processAnnualTransition = processAnnualTransition;
   window.tickWeek = tickWeek;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { startWeeklyLoop, processAnnualTransition, tickWeek };
+  module.exports = {
+    startWeeklyLoop, togglePause, setGameSpeed, manualTickWeek,
+    acceptContract, tickContractProgress, upgradeStudioOffice,
+    processAnnualTransition, tickWeek
+  };
 }

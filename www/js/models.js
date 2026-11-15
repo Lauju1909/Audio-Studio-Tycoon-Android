@@ -57,7 +57,10 @@ function createDefaultState(startYear = 1930) {
     streamerHypeMulti: 1.0,
     subscriptionMulti: 1.0,
     qualityStandardMulti: 1.0,
-    currentTrend: { topic: "Radio-Drama", genre: "Abenteuer" },
+    currentTrend: { topic: "Radio-Drama", genre: "Action" },
+    officeLevel: 0,
+    activeContract: null,
+    gameSpeed: 1,
     eventLog: [],
     customEngines: [
       { id: 'engine_basic_1', name: 'Monophonic 8-Bit Engine', features: ['basic_audio'], audioBonus: 5, techBonus: 5, bugReduction: 0 }

@@ -426,4 +426,138 @@ assert.strictEqual(t("event_1934").includes("für"), true, "event_1934 must cont
 assert.strictEqual(t("event_1951").includes("Großrechner"), true, "event_1951 must contain proper 'Großrechner'");
 assert.strictEqual(t("event_1973").includes("Ölkrise"), true, "event_1973 must contain proper 'Ölkrise'");
 
-console.log("\nALL 25 SIMULATION & TIMELINE INTEGRATION TESTS PASSED 100%!");
+console.log("=== TEST 26: Contract Work System (Safe Early Income & Deadline Handling) ===");
+Object.assign(StudioState, createDefaultState(1930));
+StudioState.cash = 10000;
+assert.strictEqual(acceptContract('jingle_radio'), true, "Should accept jingle_radio contract");
+assert.ok(StudioState.activeContract, "activeContract must be populated");
+assert.strictEqual(acceptContract('foley_drama'), false, "Cannot accept a second contract while one is active");
+for (let i = 0; i < 3; i++) {
+  tickWeek();
+}
+assert.strictEqual(StudioState.activeContract, null, "Contract should complete within 3 weeks");
+assert(StudioState.cash > 12000, "Cash must increase from completed contract reward");
+
+console.log("=== TEST 27: Studio Office Upgrades & Staff Training / Capacity Gating ===");
+StudioState.cash = 100000;
+StudioState.officeLevel = 0;
+while (StudioState.staff.length < 4) {
+  hireNewCandidate('coder');
+}
+assert.strictEqual(StudioState.staff.length, 4);
+assert.strictEqual(hireNewCandidate('sound'), false, "Garage office (level 0) must cap staff at 4");
+assert.strictEqual(upgradeStudioOffice(), true, "Should upgrade to Small Recording Studio (level 1)");
+assert.strictEqual(StudioState.officeLevel, 1);
+assert.strictEqual(hireNewCandidate('sound'), true, "Upgraded studio (level 1) allows up to 6 staff");
+const prevSkill = StudioState.staff[0].skill;
+assert.strictEqual(trainStaffMember(StudioState.staff[0].id), true, "Should train staff member");
+assert.strictEqual(StudioState.staff[0].skill, prevSkill + 1, "Training must increase staff skill by 1");
+
+console.log("=== TEST 28: Pre-Release QA Polish, Live Audio Boost & Dual-Slider Genre Synergy ===");
+StudioState.cash = 50000;
+StudioState.activeProject = {
+  title: 'Detective Noir',
+  theme: 'Detektiv',
+  genre: 'Puzzle',
+  engineId: 'engine_basic_1',
+  gameplay: 85,
+  sound: 65,
+  platform: 'Hand-Abakus',
+  platformMarketMulti: 1.0,
+  assignedStaffIds: [StudioState.staff[0].id],
+  progress: 90,
+  features: 45,
+  audioPts: 65,
+  bugs: 6,
+  polishPasses: 0,
+  decisionMade: false,
+  qualityBoost: 0,
+  sequelNumber: 1
+};
+assert.strictEqual(polishActiveProject(), true, "QA Polish pass should succeed");
+assert.strictEqual(StudioState.activeProject.bugs, 2, "QA Polish must remove up to 4 bugs");
+assert.strictEqual(boostActiveProjectAudio(), true, "Live Audio Session boost should succeed once");
+assert.strictEqual(boostActiveProjectAudio(), false, "Duplicate Live Audio Session on same project must be blocked");
+assert.strictEqual(polishActiveProject(), true, "Second QA Polish pass removes remaining 2 bugs");
+assert.strictEqual(StudioState.activeProject.bugs, 0);
+
+console.log("=== TEST 29: Post-Release Lifecycle (Post-Mortem Report, Patch & Addon/DLC Caps) ===");
+StudioState.activeProject.bugs = 3; // Leave 3 bugs to test post-release patch
+finishDevelopment();
+const relGame = StudioState.releasedGames[0];
+assert.strictEqual(relGame.title, 'Detective Noir');
+assert.strictEqual(relGame.bugs, 3);
+const rpBeforePostMortem = StudioState.rp;
+assert.strictEqual(analyzePostMortem(relGame.id), true, "First Post-Mortem analysis should succeed");
+assert.strictEqual(StudioState.rp, rpBeforePostMortem + 10, "Post-Mortem must award +10 RP");
+assert.strictEqual(analyzePostMortem(relGame.id), false, "Duplicate Post-Mortem on same game must fail");
+
+assert.strictEqual(releaseGamePatch(relGame.id), true, "Patch should fix bugs on released game");
+assert.strictEqual(relGame.bugs, 0);
+assert.strictEqual(releaseGamePatch(relGame.id), false, "Second patch when bugs == 0 must fail");
+
+assert.strictEqual(releaseGameDLC(relGame.id), true, "1st DLC should succeed");
+assert.strictEqual(releaseGameDLC(relGame.id), true, "2nd DLC should succeed");
+assert.strictEqual(relGame.dlcCount, 2);
+assert.strictEqual(releaseGameDLC(relGame.id), false, "3rd DLC must be blocked (max 2 DLCs per game)");
+
+console.log("=== TEST 30: Accessible Time & Speed Controls ===");
+StudioState.isPaused = false;
+assert.strictEqual(togglePause(), true, "togglePause should pause simulation");
+assert.strictEqual(setGameSpeed(2), 2, "setGameSpeed(2) should set speed to 2x and unpause");
+assert.strictEqual(StudioState.isPaused, false);
+if (StudioState.timerInterval) {
+  clearInterval(StudioState.timerInterval);
+  StudioState.timerInterval = null;
+}
+
+console.log("=== TEST 31: Sequel Auto-Naming, Engine Upgrade vs Fatigue & QA Polish Cap ===");
+StudioState.cash = 200000;
+const origForSeq = StudioState.releasedGames[0];
+origForSeq.title = "Symphonie der Nacht";
+origForSeq.sequelNumber = 1;
+origForSeq.engineId = "engine_basic_1";
+document.getElementById('input-game-name').value = ""; // Blank input -> auto sequel title
+document.getElementById('select-sequel').value = String(origForSeq.id);
+document.getElementById('select-engine').value = "engine_basic_1"; // Same engine -> franchise fatigue (-4)
+startDevelopment();
+assert.strictEqual(StudioState.activeProject.title, "Symphonie der Nacht 2", "Blank input on sequel must auto-name '<orig.title> 2'");
+assert.strictEqual(StudioState.activeProject.qualityBoost, -4, "Reusing identical engine on sequel must apply -4 franchise fatigue");
+
+// Test QA Polish cap at 3 passes (+9 qualityBoost max even if new bugs appear)
+StudioState.activeProject.bugs = 20;
+assert.strictEqual(polishActiveProject(), true); // pass 1 (-4 -> -1)
+assert.strictEqual(polishActiveProject(), true); // pass 2 (-1 -> +2)
+assert.strictEqual(polishActiveProject(), true); // pass 3 (+2 -> +5)
+assert.strictEqual(StudioState.activeProject.polishPasses, 3);
+assert.strictEqual(StudioState.activeProject.qualityBoost, 5);
+// 4th pass with remaining bugs fixes bugs but does NOT increase qualityBoost beyond 3 passes
+assert.strictEqual(polishActiveProject(), true);
+assert.strictEqual(StudioState.activeProject.polishPasses, 3, "polishPasses must cap at 3");
+assert.strictEqual(StudioState.activeProject.qualityBoost, 5, "qualityBoost must not stack infinitely past 3 QA passes");
+
+console.log("=== TEST 32: Mid-Development Save/Load DOM Restoration & English Localization ===");
+assert.strictEqual(boostActiveProjectAudio(), true);
+assert.strictEqual(StudioState.activeProject.decisionMade, true);
+saveGame();
+// Simulate fresh page state before loadGame()
+document.getElementById('active-project-card').style.display = 'none';
+document.getElementById('dev-game-title').textContent = 'Placeholder';
+document.getElementById('btn-boost-dev').style.display = 'inline-block';
+loadGame();
+assert.strictEqual(document.getElementById('active-project-card').style.display, 'flex', "loadGame must restore active-project-card visibility");
+assert.strictEqual(document.getElementById('dev-game-title').textContent, 'Symphonie der Nacht 2', "loadGame must restore active project title in DOM");
+assert.strictEqual(document.getElementById('btn-boost-dev').style.display, 'none', "loadGame must keep boost button hidden when decisionMade is true");
+
+// Switch language to English and verify HUD/active-dev buttons localize
+StudioState.language = 'de';
+toggleLanguage();
+assert.strictEqual(StudioState.language, 'en');
+assert.ok(document.getElementById('btn-time-next').textContent.includes('Week'), "Next week button must localize to English");
+assert.ok(document.getElementById('btn-polish-dev').textContent.includes('Polish'), "QA Polish button must localize to English");
+toggleLanguage(); // back to 'de'
+StudioState.activeProject = null;
+
+console.log("\nALL 32 SIMULATION, TYCOON LOOP & TIMELINE INTEGRATION TESTS PASSED 100%!");
+process.exit(0);
+

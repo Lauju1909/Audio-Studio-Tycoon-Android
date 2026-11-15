@@ -7,13 +7,85 @@ const START_YEAR = 1930;
 const WEEKS_PER_YEAR = 48;
 
 const THEME_GENRE_SYNERGIES = {
-  "Fantasy": { "RPG": 1.18, "Action": 1.05, "Strategy": 1.08, "Simulation": 0.92, "Puzzle": 0.95 },
-  "SciFi": { "Strategy": 1.18, "Simulation": 1.12, "Action": 1.10, "RPG": 1.05, "Puzzle": 0.98 },
-  "Cyberpunk": { "Action": 1.15, "RPG": 1.15, "Strategy": 1.02, "Simulation": 0.95, "Puzzle": 0.92 },
-  "Horror": { "Action": 1.14, "RPG": 1.06, "Puzzle": 1.10, "Strategy": 0.88, "Simulation": 0.85 },
-  "Medieval": { "Strategy": 1.16, "RPG": 1.12, "Simulation": 1.04, "Action": 1.02, "Puzzle": 0.90 },
-  "Retro": { "Puzzle": 1.16, "Action": 1.10, "Simulation": 1.00, "RPG": 1.02, "Strategy": 0.95 }
+  "Fantasy": { "RPG": 1.18, "Action": 1.05, "Strategy": 1.08, "Simulation": 0.92, "Puzzle": 0.95, "Casual": 0.94, "Kampfspiel": 1.06 },
+  "SciFi": { "Strategy": 1.18, "Simulation": 1.12, "Action": 1.10, "RPG": 1.05, "Puzzle": 0.98, "Casual": 0.92, "Kampfspiel": 1.04 },
+  "Cyberpunk": { "Action": 1.15, "RPG": 1.15, "Strategy": 1.02, "Simulation": 0.95, "Puzzle": 0.92, "Casual": 0.88, "Kampfspiel": 1.12 },
+  "Horror": { "Action": 1.14, "RPG": 1.06, "Puzzle": 1.10, "Strategy": 0.88, "Simulation": 0.85, "Casual": 0.82, "Kampfspiel": 0.95 },
+  "Medieval": { "Strategy": 1.16, "RPG": 1.12, "Simulation": 1.04, "Action": 1.02, "Puzzle": 0.90, "Casual": 0.90, "Kampfspiel": 1.08 },
+  "Retro": { "Puzzle": 1.16, "Action": 1.10, "Simulation": 1.00, "RPG": 1.02, "Strategy": 0.95, "Casual": 1.18, "Kampfspiel": 1.12 }
 };
+
+const GENRE_IDEAL_SLIDERS = {
+  "RPG": { gameplay: 55, sound: 80 },
+  "Action": { gameplay: 80, sound: 75 },
+  "Strategy": { gameplay: 85, sound: 55 },
+  "Simulation": { gameplay: 75, sound: 70 },
+  "Puzzle": { gameplay: 85, sound: 65 },
+  "Casual": { gameplay: 70, sound: 85 },
+  "Kampfspiel": { gameplay: 90, sound: 80 }
+};
+
+const CONTRACTS_CATALOG = [
+  { id: 'jingle_radio', name: 'Radio-Jingle & Stationskennung', name_en: 'Radio Jingle & Station ID', reward: 4500, penalty: 1000, requiredPoints: 35, weeks: 3, category: 'Sound' },
+  { id: 'foley_drama', name: 'Hörspiel-Geräuschkulisse (Foley)', name_en: 'Audio Drama Foley Soundscape', reward: 7500, penalty: 1800, requiredPoints: 55, weeks: 4, category: 'Sound' },
+  { id: 'signal_filter', name: 'Frequenzweiche & Signal-Optimierung', name_en: 'Signal Filter & Logic Optimization', reward: 10500, penalty: 2500, requiredPoints: 75, weeks: 4, category: 'Code' },
+  { id: 'mastering_vinyl', name: 'Orchester- & Tonträger-Mastering', name_en: 'Orchestra & Record Mastering', reward: 16000, penalty: 3500, requiredPoints: 110, weeks: 5, category: 'Mastering' }
+];
+
+const OFFICE_UPGRADES_CATALOG = [
+  { level: 0, name: 'Hinterhof-Tonkabine (Garage)', name_en: 'Backyard Sound Booth (Garage)', cost: 0, maxStaff: 4, qualityBonus: 0.0 },
+  { level: 1, name: 'Kleines Tonstudio', name_en: 'Small Recording Studio', cost: 30000, maxStaff: 6, qualityBonus: 0.05 },
+  { level: 2, name: 'Professionelles Funkhaus-Studio', name_en: 'Professional Broadcast Studio', cost: 90000, maxStaff: 8, qualityBonus: 0.12 },
+  { level: 3, name: 'Internationaler Audio-Campus (HQ)', name_en: 'International Audio Campus (HQ)', cost: 250000, maxStaff: 12, qualityBonus: 0.20 }
+];
+
+function getSynergyMultiplier(theme, genre) {
+  if (THEME_GENRE_SYNERGIES[theme] && THEME_GENRE_SYNERGIES[theme][genre] !== undefined) {
+    return THEME_GENRE_SYNERGIES[theme][genre];
+  }
+  const t = String(theme || '');
+  const g = String(genre || '');
+  if (/Schach|Kryptografie|Logik|Mathe|Rätsel|Detektiv/i.test(t)) {
+    if (g === 'Puzzle' || g === 'Strategy') return 1.18;
+    if (g === 'Simulation' || g === 'RPG') return 1.05;
+    if (g === 'Kampfspiel' || g === 'Action') return 0.88;
+  }
+  if (/Rennen|Rennwagen|Motorsport|Flug|Eisenbahn|U-Boot|Schiff|Wirtschaft|Krankenhaus|Freizeitpark/i.test(t)) {
+    if (g === 'Simulation' || g === 'Strategy') return 1.18;
+    if (g === 'Action' || g === 'Casual') return 1.06;
+    if (g === 'RPG') return 0.90;
+  }
+  if (/Swing|Rock|Musik|Synthesizer|Tanz|Party|Koch|Mode/i.test(t)) {
+    if (g === 'Casual' || g === 'Puzzle' || g === 'Simulation') return 1.18;
+    if (g === 'Action') return 1.04;
+    if (g === 'Strategy') return 0.90;
+  }
+  if (/Kung-Fu|Kampf|Boxen|Ritter|Gladiator|Ninja|Samurai/i.test(t)) {
+    if (g === 'Kampfspiel' || g === 'Action') return 1.18;
+    if (g === 'RPG' || g === 'Strategy') return 1.08;
+    if (g === 'Puzzle') return 0.88;
+  }
+  if (/Horror|Zombie|Vampir|Geister|Grusel|Dämon/i.test(t)) {
+    if (g === 'Action' || g === 'Puzzle' || g === 'RPG') return 1.15;
+    if (g === 'Casual' || g === 'Simulation') return 0.85;
+  }
+  if (/Weltraum|Mars|Alien|Zukunft|Roboter|KI|Neural/i.test(t)) {
+    if (g === 'Strategy' || g === 'Simulation' || g === 'Action' || g === 'RPG') return 1.15;
+  }
+  return 1.04;
+}
+
+function getCompatibilityStars(theme, genre) {
+  const mult = getSynergyMultiplier(theme, genre);
+  if (mult >= 1.12) return 3;
+  if (mult >= 1.00) return 2;
+  if (mult >= 0.90) return 1;
+  return 0;
+}
+
+function getIdealSlidersForGenre(genre) {
+  return GENRE_IDEAL_SLIDERS[genre] || { gameplay: 70, sound: 75 };
+}
 
 const RESEARCH_CATALOG = [
   { id: 'chiptune', name: 'Synthesizer Chiptune Modul', cost: 15, year: 1980, desc: '+20% Audio-Punkte bei Retro- & Cyberpunk-Titeln', effect: { audioPct: 20, themes: ['Retro', 'Cyberpunk'] , name_en: "Synthesizer Chiptune Module", desc_en: "+20% Audio Points for Retro & Cyberpunk titles"} },
@@ -2153,6 +2225,12 @@ if (typeof window !== 'undefined') {
   window.getYearEvent = getYearEvent;
   window.getNewlyUnlockedTopics = getNewlyUnlockedTopics;
   window.getAvailableTopics = getAvailableTopics;
+  window.GENRE_IDEAL_SLIDERS = GENRE_IDEAL_SLIDERS;
+  window.CONTRACTS_CATALOG = CONTRACTS_CATALOG;
+  window.OFFICE_UPGRADES_CATALOG = OFFICE_UPGRADES_CATALOG;
+  window.getSynergyMultiplier = getSynergyMultiplier;
+  window.getCompatibilityStars = getCompatibilityStars;
+  window.getIdealSlidersForGenre = getIdealSlidersForGenre;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -2161,6 +2239,8 @@ if (typeof module !== 'undefined' && module.exports) {
     RANDOM_TITLES, HISTORICAL_ERAS, PLATFORMS, YEAR_EVENTS, FEATURE_UNLOCKS,
     HISTORICAL_TOPICS, getCurrentEra, getAvailablePlatforms, getNewlyUnlockedPlatforms,
     getNewlyRetiredPlatforms, getNewlyUnlockedFeatures, isFeatureUnlocked,
-    getYearEvent, getNewlyUnlockedTopics, getAvailableTopics
+    getYearEvent, getNewlyUnlockedTopics, getAvailableTopics,
+    GENRE_IDEAL_SLIDERS, CONTRACTS_CATALOG, OFFICE_UPGRADES_CATALOG,
+    getSynergyMultiplier, getCompatibilityStars, getIdealSlidersForGenre
   };
 }

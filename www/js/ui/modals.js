@@ -19,6 +19,9 @@ function openDevModal() {
     return;
   }
 
+  const isEn = StudioState.language === 'en';
+  const curTrend = StudioState.currentTrend || { topic: 'Radio-Drama', genre: 'Action' };
+
   const themeSelect = document.getElementById('select-theme');
   if (themeSelect) {
     themeSelect.innerHTML = '';
@@ -29,8 +32,10 @@ function openDevModal() {
       const opt = document.createElement('option');
       opt.value = themeName;
       const histTopic = (typeof HISTORICAL_TOPICS !== 'undefined') ? HISTORICAL_TOPICS.find(t => t.name === themeName) : null;
+      const isTrend = curTrend.topic === themeName;
+      const trendBadge = isTrend ? (isEn ? ' [🔥 TREND!]' : ' [🔥 IM TREND!]') : '';
       const extraInfo = histTopic ? ` (${histTopic.synergy ? `Synergie: ${histTopic.synergy}` : ''}${histTopic.hype_level ? ` • Hype: ★${histTopic.hype_level}` : ''})` : '';
-      opt.textContent = `${themeName}${extraInfo}`;
+      opt.textContent = `${themeName}${trendBadge}${extraInfo}`;
       themeSelect.appendChild(opt);
     });
   }
@@ -44,10 +49,56 @@ function openDevModal() {
     unlockedGenres.forEach(genreName => {
       const opt = document.createElement('option');
       opt.value = genreName;
-      opt.textContent = genreName;
+      const isTrend = curTrend.genre === genreName;
+      const trendBadge = isTrend ? (isEn ? ' [🔥 TREND!]' : ' [🔥 IM TREND!]') : '';
+      opt.textContent = `${genreName}${trendBadge}`;
       genreSelect.appendChild(opt);
     });
   }
+
+  const sequelSelect = document.getElementById('select-sequel');
+  if (sequelSelect) {
+    sequelSelect.innerHTML = '';
+    const origOpt = document.createElement('option');
+    origOpt.value = '';
+    origOpt.textContent = isEn ? 'New Original IP' : 'Neue Original-Produktion';
+    sequelSelect.appendChild(origOpt);
+    if (Array.isArray(StudioState.releasedGames)) {
+      StudioState.releasedGames.slice(0, 8).forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = String(g.id);
+        opt.textContent = isEn
+          ? `Sequel to "${g.title}" (${g.theme}/${g.genre} • ${g.score}%)`
+          : `Fortsetzung zu "${g.title}" (${g.theme}/${g.genre} • ${g.score}%)`;
+        sequelSelect.appendChild(opt);
+      });
+    }
+    sequelSelect.onchange = () => {
+      const g = (StudioState.releasedGames || []).find(x => String(x.id) === String(sequelSelect.value));
+      if (g) {
+        if (themeSelect) themeSelect.value = g.theme;
+        if (genreSelect) genreSelect.value = g.genre;
+        const nameInput = document.getElementById('input-game-name');
+        if (nameInput) {
+          const baseTitle = (g.title || '').replace(/\s+\d+$/, '').trim();
+          const nextNum = (g.sequelNumber || 1) + 1;
+          nameInput.value = `${baseTitle} ${nextNum}`;
+        }
+        applyIdealGenreSliders(false);
+        updateDevSynergyPreview();
+      }
+    };
+  }
+
+  if (themeSelect) themeSelect.onchange = updateDevSynergyPreview;
+  if (genreSelect) {
+    genreSelect.onchange = () => {
+      applyIdealGenreSliders(false);
+      updateDevSynergyPreview();
+    };
+  }
+  applyIdealGenreSliders(false);
+  updateDevSynergyPreview();
 
   const platformSelect = document.getElementById('select-platform');
   const availablePlats = (typeof getAvailablePlatforms === 'function')
@@ -120,6 +171,109 @@ function openDevModal() {
 function closeDevModal() {
   const modal = document.getElementById('modal-dev');
   if (modal) modal.style.display = 'none';
+}
+
+function applyIdealGenreSliders(announce = true) {
+  const genreSelect = document.getElementById('select-genre');
+  const genre = genreSelect ? genreSelect.value : 'Action';
+  const ideal = (typeof getIdealSlidersForGenre === 'function') ? getIdealSlidersForGenre(genre) : { gameplay: 75, sound: 75 };
+  const gpSlider = document.getElementById('slider-gameplay');
+  const sndSlider = document.getElementById('slider-sound');
+  const gpValEl = document.getElementById('val-gameplay');
+  const sndValEl = document.getElementById('val-sound');
+  if (gpSlider) gpSlider.value = ideal.gameplay;
+  if (sndSlider) sndSlider.value = ideal.sound;
+  if (gpValEl) gpValEl.textContent = `${ideal.gameplay}%`;
+  if (sndValEl) sndValEl.textContent = `${ideal.sound}%`;
+  if (announce && typeof AudioEngine !== 'undefined') {
+    const isEn = StudioState.language === 'en';
+    AudioEngine.playSound('click');
+    AudioEngine.speak(isEn
+      ? `Ideal sliders set for ${genre}: Gameplay ${ideal.gameplay}%, Sound ${ideal.sound}%`
+      : `Ideale Slider für ${genre} gesetzt: Gameplay ${ideal.gameplay}%, Sound ${ideal.sound}%`);
+  }
+}
+
+function updateDevSynergyPreview() {
+  const previewEl = document.getElementById('dev-synergy-preview');
+  if (!previewEl) return;
+  const isEn = StudioState.language === 'en';
+  const themeSelect = document.getElementById('select-theme');
+  const genreSelect = document.getElementById('select-genre');
+  const theme = themeSelect ? themeSelect.value : 'Fantasy';
+  const genre = genreSelect ? genreSelect.value : 'Action';
+  const stars = (typeof getCompatibilityStars === 'function') ? getCompatibilityStars(theme, genre) : 2;
+  const ideal = (typeof getIdealSlidersForGenre === 'function') ? getIdealSlidersForGenre(genre) : { gameplay: 75, sound: 75 };
+  const starStr = stars === 3 ? '⭐⭐⭐' : (stars === 2 ? '⭐⭐' : (stars === 1 ? '⭐' : '⚠️'));
+  const ratingText = isEn
+    ? (stars === 3 ? 'Perfect Synergy!' : (stars === 2 ? 'Good Combination' : (stars === 1 ? 'Unusual Combination' : 'Poor Match')))
+    : (stars === 3 ? 'Perfekte Synergie!' : (stars === 2 ? 'Gute Kombination' : (stars === 1 ? 'Ungewöhnliche Kombi' : 'Unpassende Kombi')));
+
+  previewEl.textContent = isEn
+    ? `${starStr} ${theme} + ${genre}: ${ratingText} | Ideal Focus: Gameplay ${ideal.gameplay}% / Sound ${ideal.sound}%`
+    : `${starStr} ${theme} + ${genre}: ${ratingText} | Empfehlung: Gameplay ${ideal.gameplay}% / Sound ${ideal.sound}%`;
+}
+
+// Contracts Modal
+function openContractsModal() {
+  const modal = document.getElementById('modal-contracts');
+  if (modal) modal.style.display = 'flex';
+  renderContractsList();
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('select');
+    AudioEngine.speak(StudioState.language === 'en' ? 'Contract work & audio commissions opened.' : 'Auftragsarbeiten für sichere Studio-Einnahmen geöffnet.');
+  }
+}
+
+function closeContractsModal() {
+  const modal = document.getElementById('modal-contracts');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderContractsList() {
+  const container = document.getElementById('contracts-list');
+  if (!container) return;
+  container.innerHTML = '';
+  const isEn = StudioState.language === 'en';
+  const eraScale = (StudioState.year >= 1990) ? 2.5 : (StudioState.year >= 1970 ? 1.6 : 1.0);
+
+  if (StudioState.activeContract) {
+    const ac = StudioState.activeContract;
+    const pct = Math.min(100, Math.round((ac.currentPoints / Math.max(1, ac.requiredPoints)) * 100));
+    const activeDiv = document.createElement('div');
+    activeDiv.className = 'staff-item';
+    activeDiv.style.borderLeft = '3px solid var(--green)';
+    activeDiv.style.marginBottom = '10px';
+    activeDiv.innerHTML = `
+      <div>
+        <strong>📋 ${isEn ? 'Active Contract' : 'Laufender Auftrag'}: ${isEn ? (ac.name_en || ac.name) : ac.name}</strong>
+        <p style="font-size: 0.82rem; color: #94a3b8;">
+          ${pct}% • ${ac.weeksLeft} ${isEn ? 'weeks left' : 'Wochen übrig'} • ${isEn ? 'Reward' : 'Vergütung'}: ${formatMoney(ac.reward)}
+        </p>
+      </div>
+    `;
+    container.appendChild(activeDiv);
+  }
+
+  const catalog = (typeof CONTRACTS_CATALOG !== 'undefined') ? CONTRACTS_CATALOG : [];
+  catalog.forEach(c => {
+    const reward = Math.round((c.reward * eraScale) / 100) * 100;
+    const penalty = Math.round((c.penalty * eraScale) / 100) * 100;
+    const item = document.createElement('div');
+    item.className = 'staff-item';
+    item.innerHTML = `
+      <div>
+        <strong>🎙️ ${isEn ? c.name_en : c.name}</strong>
+        <p style="font-size: 0.8rem; color: #94a3b8;">
+          ${isEn ? 'Reward' : 'Vergütung'}: <strong class="text-green">+${formatMoney(reward)}</strong> • ${c.weeks} ${isEn ? 'Weeks' : 'Wochen'} (${isEn ? 'Penalty' : 'Strafe'}: ${formatMoney(penalty)})
+        </p>
+      </div>
+      <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.82rem;" ${StudioState.activeContract ? 'disabled' : ''} onclick="acceptContract('${c.id}')">
+        ${isEn ? 'Accept' : 'Annehmen'}
+      </button>
+    `;
+    container.appendChild(item);
+  });
 }
 
 // Research Modal
@@ -380,6 +534,11 @@ if (typeof window !== 'undefined') {
   window.closeAllModals = closeAllModals;
   window.openDevModal = openDevModal;
   window.closeDevModal = closeDevModal;
+  window.applyIdealGenreSliders = applyIdealGenreSliders;
+  window.updateDevSynergyPreview = updateDevSynergyPreview;
+  window.openContractsModal = openContractsModal;
+  window.closeContractsModal = closeContractsModal;
+  window.renderContractsList = renderContractsList;
   window.openResearchModal = openResearchModal;
   window.closeResearchModal = closeResearchModal;
   window.openEngineModal = openEngineModal;
