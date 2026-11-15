@@ -596,53 +596,396 @@ function showTimelineEventBanner(year, text, eventData) {
   banner.style.display = 'block';
 }
 
+function setFeatureLockCardUI(badgeId, btnId, unlocked, unlockYear, disableBtn) {
+  const badge = document.getElementById(badgeId);
+  const btn = document.getElementById(btnId);
+  if (badge) {
+    badge.style.display = unlocked ? 'none' : 'inline-block';
+    badge.textContent = t('locked_until', { year: unlockYear });
+  }
+  if (btn) {
+    if (disableBtn) {
+      btn.disabled = !unlocked;
+      if (unlocked) {
+        if (typeof btn.removeAttribute === 'function') btn.removeAttribute('disabled');
+      } else if (typeof btn.setAttribute === 'function') {
+        btn.setAttribute('disabled', 'true');
+      }
+    }
+    if (unlocked) btn.classList.remove('card-locked');
+    else btn.classList.add('card-locked');
+  }
+}
+
+// Hardware Lab Modal (1975+)
+function openHardwareModal() {
+  if (StudioState.year < 1975) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('feature_locked', { feature: t('hardware_lab'), year: 1975 }));
+    }
+    return;
+  }
+  const modal = document.getElementById('modal-hardware');
+  if (modal) modal.style.display = 'flex';
+  renderHardwareList();
+  if (typeof AudioEngine !== 'undefined') {
+    const catalog = (typeof HARDWARE_CATALOG !== 'undefined') ? HARDWARE_CATALOG : [];
+    const count = Array.isArray(StudioState.customHardware) ? StudioState.customHardware.length : 0;
+    AudioEngine.playSound('select');
+    AudioEngine.speak(t('hardware_modal_opened', { count, total: catalog.length }));
+  }
+}
+
+function closeHardwareModal() {
+  const modal = document.getElementById('modal-hardware');
+  if (modal) modal.style.display = 'none';
+}
+
+function handleDevelopCustomHardware(hwId) {
+  if (typeof developCustomHardware === 'function') developCustomHardware(hwId);
+  renderHardwareList();
+}
+
+function renderHardwareList() {
+  const container = document.getElementById('hardware-list');
+  const summaryEl = document.getElementById('hardware-summary');
+  if (!container && !summaryEl) return;
+
+  const isEn = StudioState.language === 'en';
+  const catalog = (typeof HARDWARE_CATALOG !== 'undefined' && Array.isArray(HARDWARE_CATALOG)) ? HARDWARE_CATALOG : [];
+  const ownedList = Array.isArray(StudioState.customHardware) ? StudioState.customHardware : [];
+  const ownedIds = ownedList.map(item => (item && typeof item === 'object' ? item.id : item));
+
+  if (summaryEl) {
+    let totalBonus = 0;
+    let totalRoyalty = 0;
+    ownedList.forEach(item => {
+      const id = item && typeof item === 'object' ? item.id : item;
+      const spec = (item && typeof item === 'object' && item.weeklyRoyalty !== undefined)
+        ? item
+        : catalog.find(c => c.id === id);
+      if (spec) {
+        totalBonus += Number(spec.qualityBonus) || 0;
+        totalRoyalty += Number(spec.weeklyRoyalty) || 0;
+      }
+    });
+    summaryEl.textContent = t('hardware_summary_label', {
+      count: ownedIds.length,
+      total: catalog.length,
+      bonus: totalBonus,
+      royalty: formatMoney(totalRoyalty)
+    });
+  }
+
+  if (!container) return;
+  container.innerHTML = '';
+  catalog.forEach(hw => {
+    const hwName = isEn ? (hw.name_en || hw.name) : hw.name;
+    const hwDesc = isEn ? (hw.desc_en || hw.desc) : hw.desc;
+    const owned = ownedIds.includes(hw.id);
+    const unlocked = StudioState.year >= (Number(hw.unlockYear) || 1975);
+    const row = document.createElement('div');
+    row.className = 'staff-item';
+    if (owned) row.style.borderLeft = '3px solid var(--green)';
+
+    let actionHtml = '';
+    if (owned) {
+      actionHtml = `<span class="badge" style="border-color: var(--green); color: var(--green);">${t('hardware_developed_badge')}</span>`;
+    } else if (!unlocked) {
+      actionHtml = `<button type="button" class="btn btn-secondary" disabled style="padding: 6px 12px; font-size: 0.82rem; opacity: 0.65;">${t('hardware_locked_year', { year: hw.unlockYear })}</button>`;
+    } else {
+      const costStr = formatMoney(hw.cost);
+      actionHtml = `<button type="button" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.82rem;" aria-label="${isEn ? `Develop ${hwName}, costs ${costStr}` : `${hwName} entwickeln, kostet ${costStr}`}" onclick="handleDevelopCustomHardware('${hw.id}')">${t('hardware_develop_btn', { cost: costStr })}</button>`;
+    }
+
+    row.innerHTML = `
+      <div>
+        <strong><span aria-hidden="true">🎛️</span> ${hwName}</strong> <span style="font-size: 0.78rem; color: #94a3b8;">(${hw.unlockYear}+)</span>
+        <p style="font-size: 0.8rem; color: #94a3b8;">${hwDesc}</p>
+        <p style="font-size: 0.78rem; color: #cbd5e1;">${t('hardware_stats_line', { royalty: formatMoney(hw.weeklyRoyalty), bonus: hw.qualityBonus })}</p>
+      </div>
+      ${actionHtml}
+    `;
+    container.appendChild(row);
+  });
+}
+
+// AudioPass Subscription Modal (1995+)
+function openSubscriptionModal() {
+  const isUnlocked = (typeof isFeatureUnlocked === 'function')
+    ? isFeatureUnlocked('subscription_vault', StudioState.year)
+    : (StudioState.year >= 1995);
+  if (!isUnlocked) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('feature_locked', { feature: t('audiopass_title'), year: 1995 }));
+    }
+    return;
+  }
+  const modal = document.getElementById('modal-subscription');
+  if (modal) modal.style.display = 'flex';
+  renderSubscriptionModal();
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('select');
+    AudioEngine.speak(t('subscription_modal_opened'));
+  }
+}
+
+function closeSubscriptionModal() {
+  const modal = document.getElementById('modal-subscription');
+  if (modal) modal.style.display = 'none';
+}
+
+function onSubscriptionPriceChange(val) {
+  if (!StudioState.subscriptionService || typeof StudioState.subscriptionService !== 'object') {
+    StudioState.subscriptionService = { active: false, price: 9, subscribers: 0 };
+  }
+  const clamped = Math.max(1, Math.min(49, Math.round(Number(val) || 9)));
+  StudioState.subscriptionService.price = clamped;
+  renderSubscriptionModal();
+}
+
+function handleToggleSubscriptionService() {
+  const selectEl = document.getElementById('select-subscription-price');
+  const price = selectEl ? Number(selectEl.value) : (StudioState.subscriptionService && StudioState.subscriptionService.price) || 9;
+  if (typeof toggleSubscriptionService === 'function') {
+    toggleSubscriptionService(price);
+  }
+  renderSubscriptionModal();
+}
+
+function renderSubscriptionModal() {
+  if (!StudioState.subscriptionService || typeof StudioState.subscriptionService !== 'object') {
+    StudioState.subscriptionService = { active: false, price: 9, subscribers: 0 };
+  }
+  const isEn = StudioState.language === 'en';
+  const fin = (typeof calculateSubscriptionWeeklyFinance === 'function')
+    ? calculateSubscriptionWeeklyFinance()
+    : {
+        active: Boolean(StudioState.subscriptionService.active && StudioState.year >= 1995),
+        price: StudioState.subscriptionService.price || 9,
+        subscribers: StudioState.subscriptionService.subscribers || 0,
+        targetSubscribers: 120,
+        gross: 0,
+        upkeep: 0,
+        net: 0
+      };
+
+  const selectEl = document.getElementById('select-subscription-price');
+  if (selectEl) {
+    const tiers = [
+      { price: 5, key: 'subscription_tier_budget' },
+      { price: 9, key: 'subscription_tier_standard' },
+      { price: 14, key: 'subscription_tier_plus' },
+      { price: 19, key: 'subscription_tier_pro' },
+      { price: 29, key: 'subscription_tier_ultra' }
+    ];
+    if (!tiers.some(item => item.price === fin.price)) {
+      tiers.push({ price: fin.price, key: 'subscription_tier_standard' });
+      tiers.sort((a, b) => a.price - b.price);
+    }
+    selectEl.innerHTML = '';
+    tiers.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = String(item.price);
+      opt.textContent = t('subscription_price_tier', { price: formatMoney(item.price), tier: t(item.key) });
+      if (item.price === fin.price) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+    selectEl.value = String(fin.price);
+  }
+
+  const panel = document.getElementById('subscription-status-panel');
+  if (panel) {
+    const netClass = fin.net >= 0 ? 'text-green' : 'text-red';
+    const netPrefix = fin.net >= 0 ? '+' : '';
+    const locale = isEn ? 'en-US' : 'de-DE';
+    panel.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <strong style="color: ${fin.active ? 'var(--green)' : '#94a3b8'};">${fin.active ? t('subscription_status_active') : t('subscription_status_paused')}</strong>
+        <span class="badge">${formatMoney(fin.price)} / ${isEn ? 'mo' : 'Mo.'}</span>
+      </div>
+      <p style="font-size: 0.84rem; margin: 4px 0;">${t('subscription_subscribers_label')}: <strong>${fin.subscribers.toLocaleString(locale)}</strong> (${t('subscription_target_label')}: ~${fin.targetSubscribers.toLocaleString(locale)})</p>
+      <p style="font-size: 0.84rem; margin: 4px 0;">${t('subscription_gross_label')}: <strong class="text-green">+${formatMoney(fin.gross)}</strong> • ${t('subscription_upkeep_label')}: <strong class="text-red">-${formatMoney(fin.upkeep)}</strong></p>
+      <p style="font-size: 0.88rem; margin: 4px 0 0 0;">${t('subscription_net_label')}: <strong class="${netClass}">${netPrefix}${formatMoney(fin.net)}</strong></p>
+    `;
+  }
+
+  const toggleBtn = document.getElementById('btn-toggle-subscription');
+  if (toggleBtn) {
+    toggleBtn.textContent = fin.active ? t('subscription_pause_btn') : t('subscription_activate_btn');
+    toggleBtn.setAttribute('aria-pressed', String(Boolean(fin.active)));
+  }
+}
+
+// Rivals & Acquisitions Modal
+function openRivalsModal() {
+  const modal = document.getElementById('modal-rivals');
+  if (modal) modal.style.display = 'flex';
+  renderRivalsList();
+  if (typeof AudioEngine !== 'undefined') {
+    const rivals = Array.isArray(StudioState.rivals) ? StudioState.rivals : [];
+    const acquiredCount = rivals.filter(r => r && r.acquired).length;
+    AudioEngine.playSound('select');
+    AudioEngine.speak(t('rivals_modal_opened', { count: acquiredCount, total: rivals.length }));
+  }
+}
+
+function closeRivalsModal() {
+  const modal = document.getElementById('modal-rivals');
+  if (modal) modal.style.display = 'none';
+}
+
+function handleAcquireRival(rivalId) {
+  if (typeof acquireRivalStudio === 'function') acquireRivalStudio(rivalId);
+  renderRivalsList();
+}
+
+function renderRivalsList() {
+  const container = document.getElementById('rivals-list');
+  const summaryEl = document.getElementById('rivals-summary');
+  if (!container && !summaryEl) return;
+
+  const isEn = StudioState.language === 'en';
+  const rivals = (Array.isArray(StudioState.rivals) && StudioState.rivals.length > 0)
+    ? StudioState.rivals
+    : ((typeof RIVALS_CATALOG !== 'undefined' && Array.isArray(RIVALS_CATALOG))
+        ? RIVALS_CATALOG.map(r => ({ ...r, acquired: false }))
+        : []);
+  const acquired = rivals.filter(r => r && r.acquired);
+  const totalDiv = acquired.reduce((s, r) => s + (Number(r.weeklyDividend) || 0), 0);
+
+  if (summaryEl) {
+    const summaryText = t('rivals_summary_label', {
+      count: acquired.length,
+      total: rivals.length,
+      dividend: formatMoney(totalDiv)
+    });
+    summaryEl.innerHTML = `${summaryText}${acquired.length > 0 ? ` • <strong class="text-green">${t('rivals_fan_boost_active')}</strong>` : ''}`;
+  }
+
+  if (!container) return;
+  container.innerHTML = '';
+  rivals.forEach(r => {
+    if (!r) return;
+    const row = document.createElement('div');
+    row.className = 'staff-item';
+    if (r.acquired) row.style.borderLeft = '3px solid var(--green)';
+
+    const valFormatted = formatMoney(r.valuation || 0);
+    const divFormatted = formatMoney(r.weeklyDividend || 0);
+    const actionHtml = r.acquired
+      ? `<span class="badge" style="border-color: var(--green); color: var(--green);">${t('rival_acquired_badge')}</span>`
+      : `<button type="button" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.82rem;" aria-label="${isEn ? `Acquire ${r.name} for ${valFormatted}, weekly dividend ${divFormatted}` : `${r.name} für ${valFormatted} übernehmen, wöchentliche Dividende ${divFormatted}`}" onclick="handleAcquireRival('${r.id}')">${t('rival_acquire_btn', { cost: valFormatted })}</button>`;
+
+    row.innerHTML = `
+      <div>
+        <strong><span aria-hidden="true">🏢</span> ${r.name}</strong>
+        <p style="font-size: 0.8rem; color: #94a3b8;">${t('rival_stats_line', { rep: r.reputation, val: valFormatted, div: divFormatted })}</p>
+      </div>
+      ${actionHtml}
+    `;
+    container.appendChild(row);
+  });
+}
+
+// Studio Milestones / Achievements Modal
+function openAchievementsModal() {
+  let unlockedNow = [];
+  if (typeof checkAchievements === 'function') {
+    unlockedNow = checkAchievements() || [];
+  }
+  const modal = document.getElementById('modal-achievements');
+  if (modal) modal.style.display = 'flex';
+  renderAchievementsList();
+  if (typeof AudioEngine !== 'undefined' && unlockedNow.length === 0) {
+    const catalog = (typeof ACHIEVEMENTS_CATALOG !== 'undefined' && Array.isArray(ACHIEVEMENTS_CATALOG)) ? ACHIEVEMENTS_CATALOG : [];
+    const count = Array.isArray(StudioState.achievements) ? StudioState.achievements.length : 0;
+    AudioEngine.playSound('select');
+    AudioEngine.speak(t('milestones_modal_opened', { count, total: catalog.length }));
+  }
+}
+
+function closeAchievementsModal() {
+  const modal = document.getElementById('modal-achievements');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderAchievementsList() {
+  const container = document.getElementById('achievements-list');
+  const summaryEl = document.getElementById('achievements-summary');
+  if (!container && !summaryEl) return;
+
+  const isEn = StudioState.language === 'en';
+  const locale = isEn ? 'en-US' : 'de-DE';
+  const catalog = (typeof ACHIEVEMENTS_CATALOG !== 'undefined' && Array.isArray(ACHIEVEMENTS_CATALOG)) ? ACHIEVEMENTS_CATALOG : [];
+  const unlockedIds = Array.isArray(StudioState.achievements) ? StudioState.achievements : [];
+
+  if (summaryEl) {
+    summaryEl.textContent = t('milestones_summary_label', { count: unlockedIds.length, total: catalog.length });
+  }
+
+  if (!container) return;
+  container.innerHTML = '';
+  catalog.forEach(ach => {
+    const isUnlocked = unlockedIds.includes(ach.id);
+    const title = isEn ? (ach.name_en || ach.name) : ach.name;
+    const desc = isEn ? (ach.desc_en || ach.desc) : ach.desc;
+    const rewardText = t('milestone_reward_line', {
+      cash: formatMoney(ach.rewardCash || 0),
+      fans: (ach.rewardFans || 0).toLocaleString(locale),
+      rp: ach.rewardRp || 0
+    });
+
+    const row = document.createElement('div');
+    row.className = 'staff-item';
+    if (isUnlocked) row.style.borderLeft = '3px solid var(--green)';
+
+    const statusBadge = isUnlocked
+      ? `<span class="badge" style="border-color: var(--green); color: var(--green);">${t('milestone_unlocked_badge')}</span>`
+      : `<span class="badge badge-locked">${t('milestone_locked_badge')}</span>`;
+
+    row.innerHTML = `
+      <div>
+        <strong><span aria-hidden="true">${isUnlocked ? '🏆' : '🔒'}</span> ${title}</strong>
+        <p style="font-size: 0.8rem; color: #94a3b8;">${desc}</p>
+        <p style="font-size: 0.78rem; color: #cbd5e1;">${rewardText}</p>
+      </div>
+      ${statusBadge}
+    `;
+    container.appendChild(row);
+  });
+}
+
+function refreshOpenWave2Modals() {
+  const hwModal = document.getElementById('modal-hardware');
+  if (hwModal && hwModal.style.display === 'flex') renderHardwareList();
+  const subModal = document.getElementById('modal-subscription');
+  if (subModal && subModal.style.display === 'flex') renderSubscriptionModal();
+  const rivalsModal = document.getElementById('modal-rivals');
+  if (rivalsModal && rivalsModal.style.display === 'flex') renderRivalsList();
+  const achModal = document.getElementById('modal-achievements');
+  if (achModal && achModal.style.display === 'flex') renderAchievementsList();
+}
+
 function applyFeatureUnlocksToUI() {
   const year = StudioState.year;
 
-  // SoundCon (1995)
   const soundconUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('soundcon', year) : (year >= 1995);
-  const badgeSoundcon = document.getElementById('badge-lock-soundcon');
-  const btnSoundcon = document.getElementById('btn-action-soundcon');
-  if (badgeSoundcon) {
-    badgeSoundcon.style.display = soundconUnlocked ? 'none' : 'inline-block';
-    badgeSoundcon.textContent = t('locked_until', { year: 1995 });
-  }
-  if (btnSoundcon) {
-    if (soundconUnlocked) btnSoundcon.classList.remove('card-locked');
-    else btnSoundcon.classList.add('card-locked');
-  }
+  setFeatureLockCardUI('badge-lock-soundcon', 'btn-action-soundcon', soundconUnlocked, 1995, false);
 
-  // Soundtrack Label (1985)
   const labelUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('soundtrack_label', year) : (year >= 1985);
-  const badgeLabel = document.getElementById('badge-lock-label');
-  const btnLabel = document.getElementById('btn-action-label');
-  if (badgeLabel) {
-    badgeLabel.style.display = labelUnlocked ? 'none' : 'inline-block';
-    badgeLabel.textContent = t('locked_until', { year: 1985 });
-  }
-  if (btnLabel) {
-    if (labelUnlocked) btnLabel.classList.remove('card-locked');
-    else btnLabel.classList.add('card-locked');
-  }
+  setFeatureLockCardUI('badge-lock-label', 'btn-action-label', labelUnlocked, 1985, false);
 
-  // Content Creator Sponsorship / Streamer (2010)
+  const hardwareUnlocked = year >= 1975;
+  setFeatureLockCardUI('badge-lock-hardware', 'btn-action-hardware', hardwareUnlocked, 1975, false);
+
+  const subscriptionUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('subscription_vault', year) : (year >= 1995);
+  setFeatureLockCardUI('badge-lock-subscription', 'btn-action-subscription', subscriptionUnlocked, 1995, false);
+
   const streamerUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('creator_sponsorship', year) : (year >= 2010);
-  const badgeStreamer = document.getElementById('badge-lock-streamer');
-  const btnStreamer = document.getElementById('btn-marketing-streamer');
-  if (badgeStreamer) {
-    badgeStreamer.style.display = streamerUnlocked ? 'none' : 'inline-block';
-    badgeStreamer.textContent = t('locked_until', { year: 2010 });
-  }
-  if (btnStreamer) {
-    btnStreamer.disabled = !streamerUnlocked;
-    if (streamerUnlocked) {
-      if (typeof btnStreamer.removeAttribute === 'function') btnStreamer.removeAttribute('disabled');
-      btnStreamer.classList.remove('card-locked');
-    } else {
-      if (typeof btnStreamer.setAttribute === 'function') btnStreamer.setAttribute('disabled', 'true');
-      btnStreamer.classList.add('card-locked');
-    }
-  }
+  setFeatureLockCardUI('badge-lock-streamer', 'btn-marketing-streamer', streamerUnlocked, 2010, true);
 }
 
 function showGameOverModal() {
@@ -658,6 +1001,8 @@ function showGameOverModal() {
       const fansCount = StudioState.fans || 0;
       const gotyCount = StudioState.gotyAwards ? StudioState.gotyAwards.length : 0;
       const audioAwardCount = StudioState.audioDesignAwards ? StudioState.audioDesignAwards.length : 0;
+      const achCount = Array.isArray(StudioState.achievements) ? StudioState.achievements.length : 0;
+      const achTotal = (typeof ACHIEVEMENTS_CATALOG !== 'undefined' && Array.isArray(ACHIEVEMENTS_CATALOG)) ? ACHIEVEMENTS_CATALOG.length : 10;
       statsEl.innerHTML = `
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin: 10px 0;">
           <p><span aria-hidden="true">🎮</span> <strong>${isEn ? 'Released Games' : 'Veröffentlichte Spiele'}:</strong> ${gamesCount}</p>
@@ -665,6 +1010,7 @@ function showGameOverModal() {
           <p><span aria-hidden="true">👥</span> <strong>${isEn ? 'Global Fans' : 'Treue Fans'}:</strong> ${fansCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}</p>
           <p><span aria-hidden="true">🏆</span> <strong>${t('goty_awards_label')}:</strong> ${gotyCount}</p>
           <p><span aria-hidden="true">🎙️</span> <strong>${t('best_audio_awards_label')}:</strong> ${audioAwardCount}</p>
+          <p><span aria-hidden="true">🎖️</span> <strong>${t('milestones_title')}:</strong> ${achCount} / ${achTotal}</p>
         </div>
       `;
     }
@@ -715,6 +1061,23 @@ if (typeof window !== 'undefined') {
   window.closeLabelModal = closeLabelModal;
   window.openBankModal = openBankModal;
   window.closeBankModal = closeBankModal;
+  window.openHardwareModal = openHardwareModal;
+  window.closeHardwareModal = closeHardwareModal;
+  window.renderHardwareList = renderHardwareList;
+  window.handleDevelopCustomHardware = handleDevelopCustomHardware;
+  window.openSubscriptionModal = openSubscriptionModal;
+  window.closeSubscriptionModal = closeSubscriptionModal;
+  window.renderSubscriptionModal = renderSubscriptionModal;
+  window.onSubscriptionPriceChange = onSubscriptionPriceChange;
+  window.handleToggleSubscriptionService = handleToggleSubscriptionService;
+  window.openRivalsModal = openRivalsModal;
+  window.closeRivalsModal = closeRivalsModal;
+  window.renderRivalsList = renderRivalsList;
+  window.handleAcquireRival = handleAcquireRival;
+  window.openAchievementsModal = openAchievementsModal;
+  window.closeAchievementsModal = closeAchievementsModal;
+  window.renderAchievementsList = renderAchievementsList;
+  window.refreshOpenWave2Modals = refreshOpenWave2Modals;
   window.dismissEventBanner = dismissEventBanner;
   window.showTimelineEventBanner = showTimelineEventBanner;
   window.applyFeatureUnlocksToUI = applyFeatureUnlocksToUI;
@@ -730,8 +1093,13 @@ if (typeof module !== 'undefined' && module.exports) {
     closeResearchModal, openEngineModal, closeEngineModal, openStaffModal,
     closeStaffModal, openMarketingModal, closeMarketingModal, openSoundConModal,
     closeSoundConModal, openLabelModal, closeLabelModal, openBankModal,
-    closeBankModal, dismissEventBanner, showTimelineEventBanner, applyFeatureUnlocksToUI,
-    showGameOverModal, closeGameOverModal, continueEndlessMode, renderContractsList,
-    openContractsModal, closeContractsModal
+    closeBankModal, openHardwareModal, closeHardwareModal, renderHardwareList,
+    handleDevelopCustomHardware, openSubscriptionModal, closeSubscriptionModal,
+    renderSubscriptionModal, onSubscriptionPriceChange, handleToggleSubscriptionService,
+    openRivalsModal, closeRivalsModal, renderRivalsList, handleAcquireRival,
+    openAchievementsModal, closeAchievementsModal, renderAchievementsList,
+    refreshOpenWave2Modals, dismissEventBanner, showTimelineEventBanner,
+    applyFeatureUnlocksToUI, showGameOverModal, closeGameOverModal,
+    continueEndlessMode, renderContractsList, openContractsModal, closeContractsModal
   };
 }

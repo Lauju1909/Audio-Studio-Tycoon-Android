@@ -40,10 +40,15 @@ function renderStaffList() {
     return;
   }
 
+  const traitsList = (typeof STAFF_TRAITS !== 'undefined' && Array.isArray(STAFF_TRAITS)) ? STAFF_TRAITS : [];
+
   StudioState.staff.forEach(emp => {
     const isVacation = emp.onVacationWeeks > 0;
     const roleName = emp.role === 'sound' ? (isEn ? 'Sound Designer' : 'Audio-Designer') :
                      emp.role === 'coder' ? (isEn ? 'Programmer' : 'Programmierer') : (isEn ? 'Writer' : 'Autor');
+    const traitSpec = emp.trait ? traitsList.find(tr => tr.id === emp.trait) : null;
+    const traitName = traitSpec ? (isEn ? traitSpec.name_en : traitSpec.name) : '';
+    const traitDesc = traitSpec ? (isEn ? traitSpec.desc_en : traitSpec.desc) : '';
 
     const card = document.createElement('div');
     card.className = 'staff-item';
@@ -53,9 +58,12 @@ function renderStaffList() {
         <p style="font-size: 0.8rem; color: #94a3b8;">
           ${t("salary_label", { salary: formatMoney(emp.salary) })} • ${t("skill_label", { skill: emp.skill })} • ${t("fatigue_label", { fatigue: emp.fatigue })}
         </p>
-        <span class="badge" style="background: ${isVacation ? 'var(--accent)' : 'var(--card-border)'};">
-          ${isVacation ? t("on_vacation_status", { weeks: emp.onVacationWeeks }) : t("available_status")}
-        </span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px;">
+          <span class="badge" style="background: ${isVacation ? 'var(--accent)' : 'var(--card-border)'};">
+            ${isVacation ? t("on_vacation_status", { weeks: emp.onVacationWeeks }) : t("available_status")}
+          </span>
+          ${traitName ? `<span class="badge" style="background: rgba(99, 102, 241, 0.25); color: #c7d2fe;" title="${traitDesc}" aria-label="${isEn ? 'Trait' : 'Spezialisierung'}: ${traitName}${traitDesc ? ` (${traitDesc})` : ''}">${traitName}</span>` : ''}
+        </div>
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
         <button type="button" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" ${(emp.skill >= 10 || isVacation) ? 'disabled' : ''} onclick="trainStaffMember(${emp.id})">
@@ -151,16 +159,29 @@ function hireNewCandidate(role) {
   const randomName = names[Math.floor(Math.random() * names.length)];
   const salary = role === 'sound' ? 1600 : (role === 'coder' ? 1500 : 1300);
   const skill = Math.floor(Math.random() * 2) + 2;
+  const traitsList = (typeof STAFF_TRAITS !== 'undefined' && Array.isArray(STAFF_TRAITS) && STAFF_TRAITS.length > 0)
+    ? STAFF_TRAITS
+    : [
+        { id: 'foley_master', name: 'Foley-Meister', name_en: 'Foley Master' },
+        { id: 'crunch_proof', name: 'Ausdauer-Profi', name_en: 'Crunch-Proof' },
+        { id: 'synth_pioneer', name: 'Synth-Pionier', name_en: 'Synth Pioneer' },
+        { id: 'bug_hunter', name: 'Bug-Jäger', name_en: 'Bug Hunter' },
+        { id: 'story_virtuoso', name: 'Story-Virtuose', name_en: 'Story Virtuoso' }
+      ];
+  const pickedTrait = traitsList[Math.floor(Math.random() * traitsList.length)];
+  let empId = Date.now();
+  while (StudioState.staff.some(e => e.id === empId)) empId++;
 
   const newEmp = {
-    id: Date.now(),
+    id: empId,
     name: randomName,
     role: role,
     salary: salary,
     skill: skill,
     fatigue: 0,
     morale: 100,
-    onVacationWeeks: 0
+    onVacationWeeks: 0,
+    trait: pickedTrait.id
   };
 
   StudioState.staff.push(newEmp);

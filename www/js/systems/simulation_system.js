@@ -501,6 +501,48 @@ function tickWeek() {
     }
   }
 
+  // 1c. Passive Weekly Royalties from Custom Hardware (1975+)
+  if (Array.isArray(StudioState.customHardware)) {
+    let hardwareRoyalties = 0;
+    StudioState.customHardware.forEach(hw => {
+      const hwEntry = (hw && typeof hw === 'object') ? hw : resolveHardwareCatalogItem(hw);
+      if (!hwEntry) return;
+      const royalty = Number(hwEntry.weeklyRoyalty) || 0;
+      if (royalty > 0) {
+        hardwareRoyalties += royalty;
+        if (hw && typeof hw === 'object') {
+          hw.totalRoyalties = (hw.totalRoyalties || 0) + royalty;
+        }
+      }
+    });
+    if (hardwareRoyalties > 0) {
+      StudioState.cash += hardwareRoyalties;
+    }
+  }
+
+  // 1d. Passive Weekly Net Revenue & Growth for AudioPass Subscription (1995+)
+  if (StudioState.subscriptionService && StudioState.subscriptionService.active && isSubscriptionUnlocked()) {
+    const subFin = calculateSubscriptionWeeklyFinance();
+    StudioState.cash += subFin.net;
+    const sub = StudioState.subscriptionService;
+    const target = subFin.targetSubscribers;
+    const delta = Math.round((target - sub.subscribers) * 0.15);
+    sub.subscribers = Math.max(50, (sub.subscribers || 0) + (delta !== 0 ? delta : (target > sub.subscribers ? 1 : 0)));
+  }
+
+  // 1e. Passive Weekly Dividends from Acquired Rival Studios
+  if (Array.isArray(StudioState.rivals)) {
+    let rivalDividends = 0;
+    StudioState.rivals.forEach(rival => {
+      if (rival && rival.acquired === true) {
+        rivalDividends += Number(rival.weeklyDividend) || 0;
+      }
+    });
+    if (rivalDividends > 0) {
+      StudioState.cash += rivalDividends;
+    }
+  }
+
   // 2. Staff Payroll & Vacation Recovery
   let totalSalaries = 0;
   if (StudioState.staff) {
@@ -561,6 +603,256 @@ function tickWeek() {
   if (typeof updateHUD === 'function') updateHUD();
 }
 
+function resolveSimGlobal(name, fallback) {
+  if (typeof window !== 'undefined' && window[name] !== undefined) return window[name];
+  if (typeof global !== 'undefined' && global[name] !== undefined) return global[name];
+  return fallback;
+}
+
+function resolveHardwareCatalogItem(item) {
+  const hwId = (item && typeof item === 'object') ? item.id : item;
+  const catalog = (typeof HARDWARE_CATALOG !== 'undefined' && Array.isArray(HARDWARE_CATALOG))
+    ? HARDWARE_CATALOG
+    : resolveSimGlobal('HARDWARE_CATALOG', []);
+  return catalog.find(entry => entry.id === hwId) || null;
+}
+
+function isSubscriptionUnlocked(year = StudioState.year) {
+  const y = Number(year) || 1930;
+  if (typeof isFeatureUnlocked === 'function') {
+    return isFeatureUnlocked('subscription_vault', y);
+  }
+  return y >= 1995;
+}
+
+/**
+ * Computes weekly AudioPass subscriber target, gross revenue, upkeep and net cashflow.
+ */
+function calculateSubscriptionWeeklyFinance() {
+  const sub = StudioState && StudioState.subscriptionService;
+  const price = Math.max(1, Math.min(49, Number(sub && sub.price) || 9));
+  const subMulti = Number(StudioState && StudioState.subscriptionMulti) || 1.0;
+  const priceFactor = Math.max(0.25, 1.4 - (price / 20));
+  const fans = Number(StudioState && StudioState.fans) || 0;
+  const gamesCount = Array.isArray(StudioState && StudioState.releasedGames) ? StudioState.releasedGames.length : 0;
+  const targetSubscribers = Math.max(120, Math.round(((fans * 0.25) + (gamesCount * 150)) * priceFactor * subMulti));
+  if (!sub || !sub.active || !isSubscriptionUnlocked()) {
+    return { active: false, price, subscribers: sub ? (sub.subscribers || 0) : 0, targetSubscribers, gross: 0, upkeep: 0, net: 0 };
+  }
+  const subscribers = Math.max(0, Math.round(Number(sub.subscribers) || 0));
+  const gross = Math.round(subscribers * (price / 4) * subMulti);
+  const upkeep = 200 + Math.round(subscribers * 0.8);
+  const net = gross - upkeep;
+  return { active: true, price, subscribers, targetSubscribers, gross, upkeep, net };
+}
+
+/**
+ * Develops a custom studio hardware unit from HARDWARE_CATALOG (year-gated 1975+).
+ */
+function developCustomHardware(hwId) {
+  const isEn = StudioState.language === 'en';
+  const catalog = (typeof HARDWARE_CATALOG !== 'undefined' && Array.isArray(HARDWARE_CATALOG))
+    ? HARDWARE_CATALOG
+    : resolveSimGlobal('HARDWARE_CATALOG', []);
+  const hw = catalog.find(item => item.id === hwId);
+  if (!hw) return false;
+
+  const unlockYear = Number(hw.unlockYear) || 1975;
+  if (StudioState.year < unlockYear) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn
+        ? `${hw.name_en || hw.name} unlocks in ${unlockYear}!`
+        : `${hw.name} wird erst ab ${unlockYear} freigeschaltet!`);
+    }
+    return false;
+  }
+
+  if (!Array.isArray(StudioState.customHardware)) {
+    StudioState.customHardware = [];
+  }
+  const alreadyOwned = StudioState.customHardware.some(item => (item && typeof item === 'object' ? item.id : item) === hw.id);
+  if (alreadyOwned) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn
+        ? `${hw.name_en || hw.name} is already developed!`
+        : `${hw.name} wurde bereits entwickelt!`);
+    }
+    return false;
+  }
+
+  const cost = Number(hw.cost) || 0;
+  if (StudioState.cash < cost) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(cost) }));
+    }
+    return false;
+  }
+
+  StudioState.cash -= cost;
+  StudioState.customHardware.push({
+    ...hw,
+    builtYear: StudioState.year,
+    totalRoyalties: 0
+  });
+
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('success');
+    AudioEngine.vibrate(40);
+    const hwLabel = isEn ? (hw.name_en || hw.name) : hw.name;
+    AudioEngine.speak(isEn
+      ? `Developed ${hwLabel}! +${hw.qualityBonus} release quality, +${formatMoney(hw.weeklyRoyalty)}/week royalties.`
+      : `${hwLabel} entwickelt! +${hw.qualityBonus} Release-Qualität, +${formatMoney(hw.weeklyRoyalty)}/Woche Lizenzen.`);
+  }
+  if (typeof updateHUD === 'function') updateHUD();
+  return true;
+}
+
+/**
+ * Toggles the AudioPass Subscription Service (year-gated 1995+) and optionally updates monthly price.
+ */
+function toggleSubscriptionService(price) {
+  const isEn = StudioState.language === 'en';
+  if (!StudioState.subscriptionService || typeof StudioState.subscriptionService !== 'object') {
+    StudioState.subscriptionService = { active: false, price: 9, subscribers: 0 };
+  }
+  if (!isSubscriptionUnlocked(StudioState.year)) {
+    StudioState.subscriptionService.active = false;
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn
+        ? 'AudioPass Subscription service unlocks in 1995!'
+        : 'AudioPass-Abo-Service wird erst ab 1995 freigeschaltet!');
+    }
+    return false;
+  }
+
+  const sub = StudioState.subscriptionService;
+  if (price !== undefined && price !== null && !Number.isNaN(Number(price))) {
+    sub.price = Math.max(1, Math.min(49, Math.round(Number(price))));
+  }
+  sub.active = !sub.active;
+
+  if (sub.active && (Number(sub.subscribers) || 0) <= 0) {
+    const fin = calculateSubscriptionWeeklyFinance();
+    sub.subscribers = Math.max(200, Math.round(fin.targetSubscribers * 0.75));
+  }
+
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound(sub.active ? 'success' : 'click');
+    AudioEngine.speak(sub.active
+      ? (isEn
+          ? `AudioPass activated at ${sub.price} EUR/mo (${sub.subscribers} subscribers)!`
+          : `AudioPass aktiviert für ${sub.price} EUR/Monat (${sub.subscribers} Abonnenten)!`)
+      : (isEn
+          ? 'AudioPass Subscription service paused.'
+          : 'AudioPass-Abo-Service pausiert.'));
+  }
+  if (typeof updateHUD === 'function') updateHUD();
+  return sub.active;
+}
+
+/**
+ * Acquires a rival studio from StudioState.rivals at its valuation to earn weekly dividends.
+ */
+function acquireRivalStudio(rivalId) {
+  const isEn = StudioState.language === 'en';
+  if (!Array.isArray(StudioState.rivals) || StudioState.rivals.length === 0) {
+    const catalog = (typeof RIVALS_CATALOG !== 'undefined' && Array.isArray(RIVALS_CATALOG))
+      ? RIVALS_CATALOG
+      : resolveSimGlobal('RIVALS_CATALOG', []);
+    StudioState.rivals = catalog.map(r => ({ ...r, acquired: false }));
+  }
+  const rival = StudioState.rivals.find(r => r && r.id === rivalId);
+  if (!rival) return false;
+
+  if (rival.acquired) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn
+        ? `${rival.name} is already part of your studio group!`
+        : `${rival.name} gehört bereits zu deinem Konzern!`);
+    }
+    return false;
+  }
+
+  const cost = Number(rival.valuation) || 0;
+  if (StudioState.cash < cost) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(cost) }));
+    }
+    return false;
+  }
+
+  StudioState.cash -= cost;
+  rival.acquired = true;
+  rival.acquiredYear = StudioState.year;
+
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('success');
+    AudioEngine.vibrate(50);
+    AudioEngine.speak(isEn
+      ? `Acquired ${rival.name}! Weekly subsidiary dividend: +${formatMoney(rival.weeklyDividend)}.`
+      : `${rival.name} übernommen! Wöchentliche Dividende: +${formatMoney(rival.weeklyDividend)}.`);
+  }
+  if (typeof updateHUD === 'function') updateHUD();
+  return true;
+}
+
+const ACHIEVEMENT_PREDICATES = {
+  first_release: s => Array.isArray(s.releasedGames) && s.releasedGames.length >= 1,
+  hit_80: s => Array.isArray(s.releasedGames) && s.releasedGames.some(g => (g.score || 0) >= 80),
+  masterpiece_90: s => Array.isArray(s.releasedGames) && s.releasedGames.some(g => (g.score || 0) >= 90),
+  custom_engine: s => Array.isArray(s.customEngines) && s.customEngines.length >= 2,
+  golden_mic: s => Array.isArray(s.audioDesignAwards) && s.audioDesignAwards.length >= 1,
+  millionaire: s => (Number(s.cash) || 0) >= 1000000,
+  fan_legend: s => (Number(s.fans) || 0) >= 10000,
+  hardware_pioneer: s => Array.isArray(s.customHardware) && s.customHardware.length >= 1,
+  media_mogul: s => Array.isArray(s.rivals) && s.rivals.some(r => r && r.acquired === true),
+  century_veteran: s => (Number(s.year) || 1930) >= 2026
+};
+
+/**
+ * Evaluates all ACHIEVEMENTS_CATALOG milestones, unlocks newly earned ones, and grants rewards.
+ */
+function checkAchievements() {
+  const isEn = StudioState.language === 'en';
+  if (!Array.isArray(StudioState.achievements)) {
+    StudioState.achievements = [];
+  }
+  const catalog = (typeof ACHIEVEMENTS_CATALOG !== 'undefined' && Array.isArray(ACHIEVEMENTS_CATALOG))
+    ? ACHIEVEMENTS_CATALOG
+    : resolveSimGlobal('ACHIEVEMENTS_CATALOG', []);
+  const newlyUnlocked = [];
+
+  catalog.forEach(ach => {
+    if (!ach || StudioState.achievements.includes(ach.id)) return;
+    const predicate = ACHIEVEMENT_PREDICATES[ach.id];
+    if (typeof predicate === 'function' && predicate(StudioState)) {
+      StudioState.achievements.push(ach.id);
+      StudioState.cash += Number(ach.rewardCash) || 0;
+      StudioState.fans += Number(ach.rewardFans) || 0;
+      StudioState.rp += Number(ach.rewardRp) || 0;
+      newlyUnlocked.push(ach);
+    }
+  });
+
+  if (newlyUnlocked.length > 0) {
+    const names = newlyUnlocked.map(a => (isEn ? (a.name_en || a.name) : a.name)).join(', ');
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('success');
+      AudioEngine.speak(isEn
+        ? `Milestone unlocked: ${names}!`
+        : `Meilenstein freigeschaltet: ${names}!`);
+    }
+    if (typeof updateHUD === 'function') updateHUD();
+  }
+  return newlyUnlocked;
+}
+
 [
   typeof window !== 'undefined' ? window : null,
   typeof global !== 'undefined' ? global : null
@@ -578,6 +870,11 @@ function tickWeek() {
   target.upgradeStudioOffice = upgradeStudioOffice;
   target.processAnnualTransition = processAnnualTransition;
   target.tickWeek = tickWeek;
+  target.calculateSubscriptionWeeklyFinance = calculateSubscriptionWeeklyFinance;
+  target.developCustomHardware = developCustomHardware;
+  target.toggleSubscriptionService = toggleSubscriptionService;
+  target.acquireRivalStudio = acquireRivalStudio;
+  target.checkAchievements = checkAchievements;
 });
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -585,6 +882,8 @@ if (typeof module !== 'undefined' && module.exports) {
     startWeeklyLoop, togglePause, setGameSpeed, manualTickWeek,
     getAvailableContracts, renderContractsModal, getLabelRoyaltyMultiplier,
     acceptContract, tickContractProgress, upgradeStudioOffice,
-    processAnnualTransition, tickWeek
+    processAnnualTransition, tickWeek,
+    calculateSubscriptionWeeklyFinance, developCustomHardware,
+    toggleSubscriptionService, acquireRivalStudio, checkAchievements
   };
 }

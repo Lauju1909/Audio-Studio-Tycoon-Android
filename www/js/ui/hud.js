@@ -143,6 +143,9 @@ function updateHUD() {
   if (typeof applyFeatureUnlocksToUI === 'function') {
     applyFeatureUnlocksToUI();
   }
+  if (typeof refreshOpenWave2Modals === 'function') {
+    refreshOpenWave2Modals();
+  }
 }
 
 function renderReleasedGames() {
@@ -155,8 +158,9 @@ function renderReleasedGames() {
   }
 
   const isEn = StudioState.language === 'en';
+  const releasedList = StudioState.releasedGames;
   container.innerHTML = '';
-  StudioState.releasedGames.forEach(g => {
+  releasedList.forEach(g => {
     const card = document.createElement('div');
     card.className = 'released-card';
     card.style.flexDirection = 'column';
@@ -189,6 +193,13 @@ function renderReleasedGames() {
       card.appendChild(reportP);
     }
 
+    const alreadyRemastered = Boolean(g.isRemaster)
+      || Boolean(g.remastered)
+      || String(g.title || '').includes('Remastered')
+      || releasedList.some(other => other && other.remasteredFromId != null && String(other.remasteredFromId) === String(g.id));
+    const remasterCostDisplay = isEn ? '$2,500' : '2.500 €';
+    const remasterCostSpeech = isEn ? '2,500 dollars' : '2.500 Euro';
+
     const actionsRow = document.createElement('div');
     actionsRow.style.display = 'flex';
     actionsRow.style.gap = '6px';
@@ -207,6 +218,11 @@ function renderReleasedGames() {
       ${(g.dlcCount || 0) < 2 ? `
         <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.76rem;" aria-label="${isEn ? `Release Addon/DLC for ${g.title}, costs 4,000 dollars` : `Addon/DLC für ${g.title} veröffentlichen, kostet 4.000 Euro`}" onclick="releaseGameDLC('${g.id}')">
           <span aria-hidden="true">💿</span> ${isEn ? `Addon/DLC (${g.dlcCount || 0}/2 • $4,000)` : `Addon/DLC (${g.dlcCount || 0}/2 • 4.000 €)`}
+        </button>
+      ` : ''}
+      ${!alreadyRemastered ? `
+        <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.76rem;" aria-label="${t('remaster_btn_aria', { title: g.title, cost: remasterCostSpeech })}" onclick="startRemasterProject('${g.id}')">
+          <span aria-hidden="true">💿</span> ${t('remaster_btn', { cost: remasterCostDisplay })}
         </button>
       ` : ''}
     `;
@@ -280,6 +296,7 @@ function applyLanguageToUI() {
     if (typeof renderReleasedGames === 'function') renderReleasedGames();
     if (typeof populateDevModalOptions === 'function') populateDevModalOptions();
     if (typeof updateDevSynergyPreview === 'function') updateDevSynergyPreview();
+    if (typeof refreshOpenWave2Modals === 'function') refreshOpenWave2Modals();
   }
 }
 

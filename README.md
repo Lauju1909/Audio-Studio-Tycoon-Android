@@ -46,6 +46,10 @@
   * **14 zeitgestaffelte Technologien** im Forschungslabor (`1930–2024`) — lückenlos von *Schalldämmung & Studio-Kabinen* (1930), *Magnetband-Aufnahme* (1938), *Vinyl-Schneidemaschine & Hi-Fi Mastering* (1948), *Stereo-Panorama-Mischpult* (1958), *Analoger Modular-Synthesizer* (1968) und *PCM Digital-Audio Sampling* (1975) bis zu *KI-Prozeduraler Soundtrack-Engine* (2015), *Echtzeit-Acoustic Raytracing* (2020) und *Neuronaler Echtzeit-Akustik* (2024).
   * **Engine-Drittlizenzierung:** Eigene Sound-Engines (mit ära-passenden Namen und Baujahr) können an Fremdstudios lizenziert werden und liefern wöchentliche Lizenzeinnahmen (`350 × Tech-Bonus` pro Woche), inklusive wöchentlicher Cashflow-Übersicht in der Bank (`0,5%` Wochenzins).
   * **Jährliche Preisverleihungen & Soundtrack-Label:** Automatische Tonträger-Releases ab 1985 (verstärkt durch *Vinyl-Mastering* `+15%` & *KI-Soundtrack-Engine* `+35%`), jährliche **GOTY-Verleihungen** (`score >= 85`) sowie das **Goldene Mikrofon (Bestes Audio-Design)** für audiofokussierte Titel (`score >= 75` & `audioPts >= 80`, `+15.000 €`, `+800` Fans).
+* **Remaster, Mitarbeiter-Traits, Hardware-Labor, AudioPass, Konkurrenz & Meilensteine:**
+  * **Remaster-Projekte & 5 Mitarbeiter-Spezialisierungen:** Ältere Hits lassen sich einmalig für `2.500 €` als *Remastered*-Edition mit `35 %` Startfortschritt und `+5` Qualitätsbonus auf moderner Plattform neu auflegen. Personal besitzt eines von **5 Spezialisierungs-Traits** (*Foley-Meister*, *Crunch-resistent*, *Synth-Pionier*, *Bug-Jäger*, *Story-Virtuose*) mit direktem Effekt auf Punkte, Ermüdung, Bugs und Score.
+  * **Custom Hardware-Labor (ab 1975) & AudioPass-Abo (ab 1995):** **4 eigenentwickelte Hardware-Produkte** (`1975–2016`) bringen wöchentliche Lizenz-Royalties und dauerhafte Qualitätsboni (`+2` bis `+5`). Ab 1995 lässt sich der **AudioPass**-Abodienst mit Preisstufen und dynamischer Abonnentenbasis inklusive wöchentlicher Netto-Abrechnung betreiben.
+  * **4 Konkurrenz-Studios & 10 Studio-Meilensteine:** Rivalisierende Studios lassen sich als Tochterstudios übernehmen (wöchentliche Dividenden und **+10 % Fan-Boost** auf Awards, Marketing & SoundCon); **10 Studio-Meilensteine** belohnen prägende Erfolge einmalig mit Cash, Fans und Forschungspunkten.
 
 ---
 
@@ -55,7 +59,7 @@ Dieses Projekt basiert auf **Capacitor Android** (Web-Frontend in Vanilla JS, HT
 * `www/`: Webanwendung (`index.html`, `audio_engine.js`, `js/game_data.js`, `js/models.js`, `js/systems/*.js`, `js/ui/*.js`, Styles & Assets)
 * `android/`: Natives Android-Projekt (Gradle, Capacitor Plugins, Ressourcen)
 * `rust-core/`: Rust-Bibliothek (`lauju_app_core` v2.0.0) mit JNI-Funktionen für `de.lauri.audiostudiotycoon` (`sha256Hex`, `verifyIntegrity`, `sanitizeInput`, 2 Unit-Tests)
-* `test_simulation.js`: Automatisierte Simulations-, Lokalisierungs- (274 DE/EN-Keys) und Barrierefreiheits-Testsuite (Node.js, **43 Testsuiten**)
+* `test_simulation.js`: Automatisierte Simulations-, Lokalisierungs- (327 DE/EN-Keys) und Barrierefreiheits-Testsuite (Node.js, **52 Testsuiten**)
 * `fastlane/metadata/android/`: Metadaten und Grafiken für F-Droid und App-Stores
 * `fdroid/`: F-Droid Metadaten-Rezept (`de.lauri.audiostudiotycoon.yml`)
 

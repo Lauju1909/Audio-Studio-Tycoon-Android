@@ -2,16 +2,43 @@
  * Audio Studio Tycoon - Marketing, Expos & GOTY Awards
  */
 
+function ensureRivalsState() {
+  if (!Array.isArray(StudioState.rivals)) {
+    StudioState.rivals = (typeof RIVALS_CATALOG !== 'undefined' && Array.isArray(RIVALS_CATALOG))
+      ? RIVALS_CATALOG.map(r => ({ ...r, acquired: false }))
+      : [];
+  }
+  return StudioState.rivals;
+}
+
+function getRivalFanMultiplier() {
+  const rivals = ensureRivalsState();
+  return rivals.some(r => r && r.acquired) ? 1.10 : 1.0;
+}
+
+function updateRivalReputationsAnnual(wonGoty, wonAudioAward) {
+  const rivals = ensureRivalsState();
+  rivals.forEach(rival => {
+    if (!rival) return;
+    const baseRep = typeof rival.reputation === 'number' ? rival.reputation : 50;
+    const delta = rival.acquired
+      ? ((wonGoty || wonAudioAward) ? 2 : 1)
+      : (wonGoty ? -1 : 2);
+    rival.reputation = Math.max(10, Math.min(99, baseRep + delta));
+  });
+}
+
 function handleAnnualAwards() {
   const prevYear = StudioState.year - 1;
   const pastYearGames = (StudioState.releasedGames || []).filter(g => g.year === prevYear);
   const bestGame = pastYearGames.reduce((max, g) => (g.score > (max ? max.score : 0) ? g : max), null);
+  const rivalFanMulti = getRivalFanMultiplier();
 
   let wonGoty = false;
   if (bestGame && bestGame.score >= 85) {
     wonGoty = true;
     const prize = 50000;
-    const fanBoost = 3000;
+    const fanBoost = Math.round(3000 * rivalFanMulti);
     StudioState.cash += prize;
     StudioState.fans += fanBoost;
     StudioState.gotyAwards = StudioState.gotyAwards || [];
@@ -45,7 +72,7 @@ function handleAnnualAwards() {
 
   if (bestAudioGame) {
     const audioPrize = 15000;
-    const audioFans = 800;
+    const audioFans = Math.round(800 * rivalFanMulti);
     StudioState.cash += audioPrize;
     StudioState.fans += audioFans;
     StudioState.audioDesignAwards.push({
@@ -60,8 +87,8 @@ function handleAnnualAwards() {
       AudioEngine.vibrate([80, 40, 80]);
       const isEn = StudioState.language === 'en';
       const fallbackMsg = isEn
-        ? `AWARD! Your title '${bestAudioGame.title}' wins the Golden Microphone for Best Audio Design (${prevYear})! +15,000 € prize and +800 fans!`
-        : `AUSZEICHNUNG! Dein Spiel '${bestAudioGame.title}' gewinnt das Goldene Mikrofon für Bestes Audio-Design (${prevYear})! +15.000 € Preisgeld und +800 Fans!`;
+        ? `AWARD! Your title '${bestAudioGame.title}' wins the Golden Microphone for Best Audio Design (${prevYear})! +15,000 € prize and +${audioFans} fans!`
+        : `AUSZEICHNUNG! Dein Spiel '${bestAudioGame.title}' gewinnt das Goldene Mikrofon für Bestes Audio-Design (${prevYear})! +15.000 € Preisgeld und +${audioFans} Fans!`;
       const msg = (typeof t === 'function' && t('audio_award_winner', { title: bestAudioGame.title, year: prevYear }) !== 'audio_award_winner')
         ? t('audio_award_winner', { title: bestAudioGame.title, year: prevYear })
         : fallbackMsg;
@@ -71,6 +98,8 @@ function handleAnnualAwards() {
       EventBus.emit('awards:audio', bestAudioGame);
     }
   }
+
+  updateRivalReputationsAnnual(wonGoty, Boolean(bestAudioGame));
 }
 
 function startMarketingCampaign(type) {
@@ -96,7 +125,7 @@ function startMarketingCampaign(type) {
     efficiency *= (StudioState.streamerHypeMulti || 1.0);
   }
   hype = Math.round(hype * efficiency);
-  fans = Math.round(fans * efficiency);
+  fans = Math.round(fans * efficiency * getRivalFanMultiplier());
 
   if (StudioState.cash < cost) {
     if (typeof AudioEngine !== 'undefined') {
@@ -140,6 +169,7 @@ function attendSoundCon(tier) {
   let cost = 2500, fans = 250;
   if (tier === 'medium') { cost = 8500; fans = 1200; }
   if (tier === 'keynote') { cost = 25000; fans = 5000; }
+  fans = Math.round(fans * getRivalFanMultiplier());
 
   if (StudioState.cash < cost) {
     if (typeof AudioEngine !== 'undefined') {
@@ -164,4 +194,5 @@ if (typeof window !== 'undefined') {
   window.handleAnnualAwards = handleAnnualAwards;
   window.startMarketingCampaign = startMarketingCampaign;
   window.attendSoundCon = attendSoundCon;
+  window.getRivalFanMultiplier = getRivalFanMultiplier;
 }

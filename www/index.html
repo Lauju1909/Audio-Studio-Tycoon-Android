@@ -188,6 +188,44 @@
           <p data-i18n="bank_desc">Kontoführung, Darlehen aufnehmen oder tilgen</p>
         </div>
       </button>
+
+      <button type="button" class="action-card" id="btn-action-hardware" onclick="openHardwareModal()">
+        <span class="action-icon" aria-hidden="true">🎛️</span>
+        <div class="action-info">
+          <div style="display: flex; align-items: center;">
+            <h3 data-i18n="hardware_lab">Hardware-Labor</h3>
+            <span class="badge badge-locked" id="badge-lock-hardware" style="display: none;">(Ab 1975)</span>
+          </div>
+          <p data-i18n="hardware_lab_desc">Eigene Soundkarten, DSP-Konsolen &amp; VR-Audio entwickeln</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" id="btn-action-subscription" onclick="openSubscriptionModal()">
+        <span class="action-icon" aria-hidden="true">📡</span>
+        <div class="action-info">
+          <div style="display: flex; align-items: center;">
+            <h3 data-i18n="audiopass_title">AudioPass-Abo</h3>
+            <span class="badge badge-locked" id="badge-lock-subscription" style="display: none;">(Ab 1995)</span>
+          </div>
+          <p data-i18n="audiopass_desc">Wiederkehrende Abo-Einnahmen durch Spielekatalog &amp; Fanbasis (ab 1995)</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" id="btn-action-rivals" onclick="openRivalsModal()">
+        <span class="action-icon" aria-hidden="true">🏢</span>
+        <div class="action-info">
+          <h3 data-i18n="rivals_title">Konkurrenz &amp; Übernahmen</h3>
+          <p data-i18n="rivals_desc">Rivalen aufkaufen für wöchentliche Dividenden &amp; +10% Fan-Bonus</p>
+        </div>
+      </button>
+
+      <button type="button" class="action-card" id="btn-action-achievements" onclick="openAchievementsModal()">
+        <span class="action-icon" aria-hidden="true">🏆</span>
+        <div class="action-info">
+          <h3 data-i18n="milestones_title">Studio-Meilensteine</h3>
+          <p data-i18n="milestones_desc">Historische Auszeichnungen (1930–2026) mit Bargeld-, Fan- &amp; FP-Boni</p>
+        </div>
+      </button>
     </div>
 
     <!-- VERÖFFENTLICHTE SPIELE / HISTORIE -->
@@ -448,6 +486,70 @@
         </div>
       </div>
       <button type="button" class="btn btn-secondary" onclick="closeBankModal()" style="margin-top: 14px;" data-i18n="close">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: HARDWARE-LABOR (1975+) -->
+  <div id="modal-hardware" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="hardware-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="hardware-title"><span aria-hidden="true">🎛️</span> <span data-i18n="hardware_modal_title">Hardware-Labor (1975+)</span></h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;" data-i18n="hardware_modal_desc">Entwickle eigene Studio-Audio-Hardware für wöchentliche Lizenzeinnahmen und dauerhafte Release-Qualitätsboni.</p>
+      <div id="hardware-summary" aria-live="polite" style="font-size: 0.85rem; margin-bottom: 10px;"></div>
+      <div id="hardware-list" class="staff-list" aria-live="polite">
+        <!-- Dynamisch -->
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeHardwareModal()" style="margin-top: 12px;" data-i18n="close">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: AUDIOPASS ABO (1995+) -->
+  <div id="modal-subscription" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="subscription-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="subscription-title"><span aria-hidden="true">📡</span> <span data-i18n="subscription_modal_title">AudioPass Abo-Service (1995+)</span></h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;" data-i18n="subscription_modal_desc">Biete deinen gesamten Spielekatalog im monatlichen AudioPass-Abo an. Günstigere Preise ziehen mehr Abonnenten an.</p>
+      <div id="subscription-status-panel" aria-live="polite" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+        <!-- Dynamisch -->
+      </div>
+      <div class="form-group">
+        <label for="select-subscription-price" data-i18n="subscription_price_label">Monatspreis wählen:</label>
+        <select id="select-subscription-price" onchange="onSubscriptionPriceChange(this.value)">
+          <option value="5">5 € / Monat (Massenmarkt)</option>
+          <option value="9" selected>9 € / Monat (Ausgewogen)</option>
+          <option value="14">14 € / Monat (Premium)</option>
+          <option value="19">19 € / Monat (Enthusiast)</option>
+          <option value="29">29 € / Monat (Collector's)</option>
+        </select>
+      </div>
+      <div class="modal-actions" style="margin-top: 12px;">
+        <button type="button" class="btn btn-primary" id="btn-toggle-subscription" onclick="handleToggleSubscriptionService()" data-i18n="subscription_activate_btn">AudioPass aktivieren</button>
+        <button type="button" class="btn btn-secondary" onclick="closeSubscriptionModal()" data-i18n="close">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KONKURRENZ & ÜBERNAHMEN -->
+  <div id="modal-rivals" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rivals-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="rivals-title"><span aria-hidden="true">🏢</span> <span data-i18n="rivals_modal_title">Konkurrenz &amp; Studio-Übernahmen</span></h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;" data-i18n="rivals_modal_desc">Übernimm konkurrierende Audio-Studios zum Marktwert, um wöchentliche Dividenden und +10% Jahres-Fanwachstum zu sichern.</p>
+      <div id="rivals-summary" aria-live="polite" style="font-size: 0.85rem; margin-bottom: 10px;"></div>
+      <div id="rivals-list" class="staff-list" aria-live="polite">
+        <!-- Dynamisch -->
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeRivalsModal()" style="margin-top: 12px;" data-i18n="close">Schließen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: STUDIO-MEILENSTEINE -->
+  <div id="modal-achievements" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="achievements-title" style="display: none;">
+    <div class="modal-card">
+      <h2 id="achievements-title"><span aria-hidden="true">🏆</span> <span data-i18n="milestones_modal_title">Studio-Meilensteine (1930–2026)</span></h2>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;" data-i18n="milestones_modal_desc">Erreiche historische Erfolge über alle Jahrzehnte hinweg für Bargeld-, Fan- und Forschungspunkt-Belohnungen.</p>
+      <div id="achievements-summary" aria-live="polite" style="font-size: 0.85rem; margin-bottom: 10px;"></div>
+      <div id="achievements-list" class="staff-list" aria-live="polite">
+        <!-- Dynamisch -->
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="closeAchievementsModal()" style="margin-top: 12px;" data-i18n="close">Schließen</button>
     </div>
   </div>
 

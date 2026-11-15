@@ -57,6 +57,41 @@ const OFFICE_UPGRADES_CATALOG = [
   { level: 3, name: 'Internationaler Audio-Campus (HQ)', name_en: 'International Audio Campus (HQ)', cost: 250000, maxStaff: 12, qualityBonus: 0.20 }
 ];
 
+const STAFF_TRAITS = [
+  { id: 'foley_master', name: 'Foley-Meister', name_en: 'Foley Master', desc: '+15% Audio-Punkte während der Entwicklung', desc_en: '+15% Audio Points during development' },
+  { id: 'crunch_proof', name: 'Ausdauer-Profi', name_en: 'Crunch-Proof', desc: '-30% Erschöpfungszuwachs pro Woche', desc_en: '-30% weekly fatigue gain' },
+  { id: 'synth_pioneer', name: 'Synth-Pionier', name_en: 'Synth Pioneer', desc: '+15% Feature-Punkte während der Entwicklung', desc_en: '+15% Feature Points during development' },
+  { id: 'bug_hunter', name: 'Bug-Jäger', name_en: 'Bug Hunter', desc: '-30% Bug-Wahrscheinlichkeit pro Woche', desc_en: '-30% bug probability per week' },
+  { id: 'story_virtuoso', name: 'Story-Virtuose', name_en: 'Story Virtuoso', desc: '+3 Gesamtwertung bei Veröffentlichung', desc_en: '+3 review score on release' }
+];
+
+const HARDWARE_CATALOG = [
+  { id: 'fm_soundcard_8bit', name: '8-Bit FM-Soundkarte', name_en: '8-Bit FM Sound Card', unlockYear: 1975, cost: 25000, weeklyRoyalty: 900, qualityBonus: 2, desc: 'Eigene FM-Synthese-Erweiterungskarte (+900 €/Wo., +2 Qualität)', desc_en: 'Custom FM synthesis expansion card (+900 EUR/wk, +2 quality)' },
+  { id: 'pcm_wavetable_card', name: 'PCM Wavetable-Audiokarte', name_en: 'PCM Wavetable Audio Card', unlockYear: 1989, cost: 55000, weeklyRoyalty: 2000, qualityBonus: 3, desc: '16-Bit Sample-Hardware für brillante Soundtracks (+2.000 €/Wo., +3 Qualität)', desc_en: '16-bit sample hardware for crisp soundtracks (+2,000 EUR/wk, +3 quality)' },
+  { id: 'surround_dsp_console', name: '3D Surround-DSP Konsole', name_en: '3D Surround DSP Console', unlockYear: 1998, cost: 110000, weeklyRoyalty: 4200, qualityBonus: 4, desc: 'Dedizierte Raumklang-Konsole mit Hardware-Hall (+4.200 €/Wo., +4 Qualität)', desc_en: 'Dedicated spatial audio console with hardware reverb (+4,200 EUR/wk, +4 quality)' },
+  { id: 'binaural_vr_headset', name: 'Binaurales VR-Audio-Headset', name_en: 'Binaural VR Audio Headset', unlockYear: 2016, cost: 180000, weeklyRoyalty: 7500, qualityBonus: 5, desc: 'Head-Tracking Raumklang-Hardware für Next-Gen Audio (+7.500 €/Wo., +5 Qualität)', desc_en: 'Head-tracking spatial audio hardware for next-gen games (+7,500 EUR/wk, +5 quality)' }
+];
+
+const RIVALS_CATALOG = [
+  { id: 'klangwerk', name: 'Klangwerk Entertainment', reputation: 62, valuation: 180000, weeklyDividend: 750 },
+  { id: 'polyphon', name: 'Polyphon Audio AG', reputation: 70, valuation: 320000, weeklyDividend: 1350 },
+  { id: 'aether_broadcast', name: 'Aether Broadcast Labs', reputation: 78, valuation: 520000, weeklyDividend: 2200 },
+  { id: 'novasonic', name: 'NovaSonic Interactive', reputation: 86, valuation: 850000, weeklyDividend: 3600 }
+];
+
+const ACHIEVEMENTS_CATALOG = [
+  { id: 'first_release', name: 'Erste Studio-Veröffentlichung', name_en: 'First Studio Release', desc: 'Veröffentliche dein erstes eigenes Audio-Spiel', desc_en: 'Release your very first audio game', rewardCash: 3000, rewardFans: 150, rewardRp: 5 },
+  { id: 'hit_80', name: 'Kritiker-Liebling (80+)', name_en: 'Critics Darling (80+)', desc: 'Erziele mindestens 80% Bewertung bei einem Release', desc_en: 'Achieve at least an 80% review score on a release', rewardCash: 8000, rewardFans: 400, rewardRp: 10 },
+  { id: 'masterpiece_90', name: 'Akustisches Meisterwerk (90+)', name_en: 'Acoustic Masterpiece (90+)', desc: 'Erziele mindestens 90% Bewertung bei einem Spiel', desc_en: 'Achieve at least a 90% review score on a game', rewardCash: 20000, rewardFans: 1000, rewardRp: 20 },
+  { id: 'custom_engine', name: 'Engine-Architekt', name_en: 'Engine Architect', desc: 'Entwickle deine erste eigene Custom Sound-Engine', desc_en: 'Build your first custom sound engine', rewardCash: 5000, rewardFans: 250, rewardRp: 10 },
+  { id: 'golden_mic', name: 'Goldenes Mikrofon', name_en: 'Golden Microphone', desc: 'Gewinne eine jährliche Auszeichnung für Bestes Audio-Design', desc_en: 'Win an annual Best Audio Design award', rewardCash: 15000, rewardFans: 600, rewardRp: 15 },
+  { id: 'millionaire', name: 'Studio-Millionär', name_en: 'Studio Millionaire', desc: 'Erreiche 1.000.000 € Studioguthaben', desc_en: 'Reach 1,000,000 EUR in studio cash', rewardCash: 25000, rewardFans: 1500, rewardRp: 25 },
+  { id: 'fan_legend', name: '10.000 treue Fans', name_en: '10,000 Loyal Fans', desc: 'Begeistere mindestens 10.000 Studio-Fans weltweit', desc_en: 'Grow your fanbase to at least 10,000 fans', rewardCash: 15000, rewardFans: 1000, rewardRp: 15 },
+  { id: 'hardware_pioneer', name: 'Hardware-Pionier (1975+)', name_en: 'Hardware Pioneer (1975+)', desc: 'Entwickle eigene Studio-Audio-Hardware im Labor', desc_en: 'Develop custom studio audio hardware in the lab', rewardCash: 20000, rewardFans: 800, rewardRp: 20 },
+  { id: 'media_mogul', name: 'Medien-Konzern (Übernahme)', name_en: 'Media Mogul (Acquisition)', desc: 'Übernimm mindestens ein konkurrierendes Studio', desc_en: 'Acquire at least one rival studio', rewardCash: 30000, rewardFans: 1200, rewardRp: 20 },
+  { id: 'century_veteran', name: 'Jahrhundert-Legende (1930–2026)', name_en: 'Century Legend (1930–2026)', desc: 'Führe dein Studio erfolgreich durch alle Ären bis ins Jahr 2026', desc_en: 'Lead your studio across all historical eras to the year 2026', rewardCash: 50000, rewardFans: 2500, rewardRp: 50 }
+];
+
 function getSynergyMultiplier(theme, genre) {
   if (THEME_GENRE_SYNERGIES[theme] && THEME_GENRE_SYNERGIES[theme][genre] !== undefined) {
     return THEME_GENRE_SYNERGIES[theme][genre];
@@ -2294,6 +2329,10 @@ if (typeof window !== 'undefined') {
   window.AUDIENCE_CATALOG = AUDIENCE_CATALOG;
   window.PUBLISHERS_CATALOG = PUBLISHERS_CATALOG;
   window.OFFICE_UPGRADES_CATALOG = OFFICE_UPGRADES_CATALOG;
+  window.STAFF_TRAITS = STAFF_TRAITS;
+  window.HARDWARE_CATALOG = HARDWARE_CATALOG;
+  window.RIVALS_CATALOG = RIVALS_CATALOG;
+  window.ACHIEVEMENTS_CATALOG = ACHIEVEMENTS_CATALOG;
   window.getSynergyMultiplier = getSynergyMultiplier;
   window.getCompatibilityStars = getCompatibilityStars;
   window.getIdealSlidersForGenre = getIdealSlidersForGenre;
@@ -2308,7 +2347,8 @@ if (typeof module !== 'undefined' && module.exports) {
     getNewlyRetiredPlatforms, getNewlyUnlockedFeatures, isFeatureUnlocked,
     getYearEvent, getNewlyUnlockedTopics, getAvailableTopics,
     GENRE_IDEAL_SLIDERS, CONTRACTS_CATALOG, AUDIENCE_CATALOG, PUBLISHERS_CATALOG,
-    OFFICE_UPGRADES_CATALOG, getSynergyMultiplier, getCompatibilityStars,
+    OFFICE_UPGRADES_CATALOG, STAFF_TRAITS, HARDWARE_CATALOG, RIVALS_CATALOG, ACHIEVEMENTS_CATALOG,
+    getSynergyMultiplier, getCompatibilityStars,
     getIdealSlidersForGenre, getAudienceCompatibility
   };
 }

@@ -6,6 +6,7 @@ global.window = global;
 const mockElements = {};
 function createMockElement(tag = 'div', id = '') {
   let _innerHTML = '';
+  const _classes = new Set();
   return {
     id,
     tagName: tag.toUpperCase(),
@@ -27,9 +28,9 @@ function createMockElement(tag = 'div', id = '') {
     removeAttribute(k) { delete this._attrs[k]; },
     getAttribute(k) { return Object.prototype.hasOwnProperty.call(this._attrs, k) ? this._attrs[k] : null; },
     classList: {
-      add() {},
-      remove() {},
-      contains() { return false; }
+      add(...cls) { cls.forEach(c => _classes.add(c)); },
+      remove(...cls) { cls.forEach(c => _classes.delete(c)); },
+      contains(c) { return _classes.has(c); }
     }
   };
 }
@@ -49,7 +50,8 @@ global.localStorage = {
   data: {},
   setItem(k, v) { this.data[k] = String(v); },
   getItem(k) { return this.data[k] || null; },
-  removeItem(k) { delete this.data[k]; }
+  removeItem(k) { delete this.data[k]; },
+  clear() { this.data = {}; }
 };
 
 // Load code in order
@@ -1101,6 +1103,511 @@ assert.ok(htmlSrc.includes('for="select-audience"') && htmlSrc.includes('for="se
 assert.ok(htmlSrc.includes('id="dev-synergy-preview"') && htmlSrc.includes('aria-live="polite"'), "Live regions must have aria-live='polite'");
 assert.ok(htmlSrc.includes('id="sr-announcer"') && htmlSrc.includes('id="sr-polite"'), "Screenreader live regions must be present");
 
-console.log("\nALL 43 SIMULATION, TYCOON LOOP & TIMELINE INTEGRATION TESTS PASSED 100%!");
+const collectMockHtml = (el) => {
+  if (!el) return '';
+  const own = (el.innerHTML || '') + (el.textContent || '');
+  const kids = Array.isArray(el.children) ? el.children.map(collectMockHtml).join('\n') : '';
+  return own + '\n' + kids;
+};
+
+console.log("=== TEST 44: Remaster Projects (Cost, 35% Boost, Completion & UI Button Hiding) ===");
+resetTestState(1985, 'de');
+StudioState.releasedGames = [
+  {
+    id: 1001,
+    title: "Wave Pioneer",
+    theme: "Sci-Fi",
+    genre: "RPG",
+    audience: "hardcore",
+    engineId: "engine_basic_1",
+    platform: "Hand-Abakus",
+    score: 74,
+    audioPts: 80,
+    bugs: 0,
+    sales: 12000,
+    revenue: 26400,
+    dlcCount: 0,
+    year: 1978,
+    isRemaster: false,
+    remastered: false
+  }
+];
+
+StudioState.cash = 2000;
+assert.strictEqual(startRemasterProject(1001), false, "Remaster start must fail with cash < 2,500 EUR");
+assert.strictEqual(StudioState.activeProject, null);
+
+StudioState.cash = 50000;
+assert.strictEqual(startRemasterProject(1001), true, "Remaster start must succeed with cash >= 2,500 EUR");
+assert.strictEqual(StudioState.cash, 47500, "Remaster must deduct 2,500 EUR upfront");
+assert.ok(StudioState.activeProject, "activeProject must be created for Remaster");
+assert.strictEqual(StudioState.activeProject.title, "Wave Pioneer Remastered");
+assert.strictEqual(StudioState.activeProject.progress, 35, "Remaster must start at 35% progress");
+assert.strictEqual(StudioState.activeProject.qualityBoost, 5, "Remaster must apply +5 qualityBoost");
+assert.strictEqual(StudioState.activeProject.isRemaster, true);
+assert.strictEqual(String(StudioState.activeProject.remasteredFromId), "1001");
+assert.strictEqual(StudioState.activeProject.features, Math.round(80 * 0.25));
+assert.strictEqual(StudioState.activeProject.audioPts, Math.round(80 * 0.35));
+assert.notStrictEqual(StudioState.activeProject.platform, "Hand-Abakus", "Remaster in 1985 must pick a modern active platform");
+assert.strictEqual(startRemasterProject(1001), false, "Concurrent remaster while activeProject is running must fail");
+
+const origRand44 = Math.random;
+try {
+  Math.random = () => 0.5;
+  StudioState.activeProject.progress = 100;
+  finishDevelopment();
+} finally {
+  Math.random = origRand44;
+}
+
+const origAfter44 = StudioState.releasedGames.find(g => String(g.id) === "1001");
+const remAfter44 = StudioState.releasedGames.find(g => g.title === "Wave Pioneer Remastered");
+assert.strictEqual(StudioState.releasedGames.length, 2, "Finished remaster must be added to releasedGames");
+assert.ok(origAfter44 && origAfter44.remastered === true, "Original game must be flagged remastered = true");
+assert.ok(remAfter44 && remAfter44.isRemaster === true, "Remastered release must be flagged isRemaster = true");
+assert.strictEqual(String(remAfter44.remasteredFromId), "1001");
+assert.strictEqual(startRemasterProject(1001), false, "Already-remastered game cannot be remastered twice");
+assert.strictEqual(startRemasterProject(remAfter44.id), false, "A Remaster release cannot be remastered again");
+
+// Verify UI renders Remaster button only for eligible non-remastered releases
+StudioState.releasedGames.push({
+  id: 1002,
+  title: "Fresh Symphony",
+  theme: "Musik",
+  genre: "Simulation",
+  platform: "C64",
+  score: 80,
+  audioPts: 70,
+  bugs: 0,
+  sales: 5000,
+  revenue: 11000,
+  dlcCount: 0,
+  year: 1984
+});
+renderReleasedGames();
+const releasedHtml44 = collectMockHtml(document.getElementById('released-games-list'));
+assert.ok(releasedHtml44.includes("startRemasterProject('1002')"), "Eligible release must show Remaster button");
+assert.strictEqual(releasedHtml44.includes("startRemasterProject('1001')"), false, "Already-remastered original must hide Remaster button");
+assert.strictEqual(releasedHtml44.includes(`startRemasterProject('${remAfter44.id}')`), false, "Remaster release must hide Remaster button");
+
+console.log("=== TEST 45: Staff Specialization Traits (5 Traits, Hiring, UI Badge & Simulation Effects) ===");
+assert.strictEqual(STAFF_TRAITS.length, 5, "STAFF_TRAITS must define 5 specializations");
+const expectedTraitIds = ['foley_master', 'crunch_proof', 'synth_pioneer', 'bug_hunter', 'story_virtuoso'];
+expectedTraitIds.forEach(tid => {
+  assert.ok(STAFF_TRAITS.some(tr => tr.id === tid), `STAFF_TRAITS must contain ${tid}`);
+});
+
+resetTestState(1980, 'de');
+assert.strictEqual(StudioState.staff[0].trait, 'foley_master', "Starter founder must begin with foley_master trait");
+
+StudioState.cash = 100000;
+assert.strictEqual(hireNewCandidate('sound'), true, "Hiring new candidate must succeed");
+const hiredMember = StudioState.staff[StudioState.staff.length - 1];
+assert.ok(expectedTraitIds.includes(hiredMember.trait), "Hired staff member must receive a valid trait from STAFF_TRAITS");
+
+// UI badge DE/EN check
+renderStaffList();
+const foleyTrait = STAFF_TRAITS.find(tr => tr.id === 'foley_master');
+assert.ok(collectMockHtml(document.getElementById('current-staff-list')).includes(foleyTrait.name), "Staff list in DE must show localized trait name");
+StudioState.language = 'en';
+renderStaffList();
+assert.ok(collectMockHtml(document.getElementById('current-staff-list')).includes(foleyTrait.name_en), "Staff list in EN must show localized English trait name");
+StudioState.language = 'de';
+
+// Deterministic trait effect checks
+const origRand45 = Math.random;
+try {
+  // 1) foley_master (+15% audioPts), synth_pioneer (+15% features), crunch_proof (-30% fatigue)
+  const runSingleDevWeekWithTrait = (traitId, randVal) => {
+    resetTestState(1980, 'de');
+    StudioState.staff = [{ id: 1, name: "Specialist", role: "sound", skill: 3, fatigue: 0, vacationWeeks: 0, trait: traitId }];
+    StudioState.activeProject = {
+      title: "Trait Bench",
+      theme: "Fantasy",
+      genre: "RPG",
+      audience: "everyone",
+      publisherId: "self_pub",
+      engineId: "engine_basic_1",
+      platform: "C64",
+      platformMarketMulti: 7.5,
+      gameplay: 50,
+      sound: 50,
+      assignedStaffIds: [1],
+      progress: 0,
+      features: 0,
+      audioPts: 0,
+      bugs: 0
+    };
+    Math.random = () => randVal;
+    tickProjectProgress();
+    return {
+      audioPts: StudioState.activeProject.audioPts,
+      features: StudioState.activeProject.features,
+      bugs: StudioState.activeProject.bugs,
+      fatigue: StudioState.staff[0].fatigue
+    };
+  };
+
+  const baseWeek = runSingleDevWeekWithTrait(null, 0.99);
+  const foleyWeek = runSingleDevWeekWithTrait('foley_master', 0.99);
+  const synthWeek = runSingleDevWeekWithTrait('synth_pioneer', 0.99);
+  const crunchWeek = runSingleDevWeekWithTrait('crunch_proof', 0.99);
+
+  assert(foleyWeek.audioPts > baseWeek.audioPts, "foley_master must generate more audioPts per week than no trait");
+  assert(synthWeek.features > baseWeek.features, "synth_pioneer must generate more feature points per week than no trait");
+  assert.strictEqual(baseWeek.fatigue, 4, "At Math.random()=0.99 base fatigue gain must be 4");
+  assert.strictEqual(crunchWeek.fatigue, 3, "crunch_proof must reduce fatigue gain from 4 to 3 (-30% rounded)");
+
+  // 2) bug_hunter (-30% bug chance: 0.30 triggers 0.35 base, misses 0.35 * 0.7 = 0.245)
+  const noBugHunter = runSingleDevWeekWithTrait(null, 0.30);
+  const withBugHunter = runSingleDevWeekWithTrait('bug_hunter', 0.30);
+  assert(noBugHunter.bugs >= 1, "Baseline at random=0.30 (< 0.35) must roll at least 1 bug");
+  assert.strictEqual(withBugHunter.bugs, 0, "bug_hunter at random=0.30 (>= 0.245) must prevent bug");
+
+  // 3) story_virtuoso (+3 review score bonus on finishDevelopment)
+  const finishWithTrait = (traitId) => {
+    resetTestState(1980, 'de');
+    StudioState.staff = [{ id: 1, name: "Writer", role: "general", skill: 2, fatigue: 0, vacationWeeks: 0, trait: traitId }];
+    StudioState.activeProject = {
+      title: "Narrative Sound",
+      theme: "Fantasy",
+      genre: "RPG",
+      audience: "everyone",
+      publisherId: "self_pub",
+      engineId: "engine_basic_1",
+      platform: "C64",
+      platformMarketMulti: 7.5,
+      gameplay: 50,
+      sound: 50,
+      assignedStaffIds: [1],
+      progress: 100,
+      features: 10,
+      audioPts: 25,
+      bugs: 0
+    };
+    Math.random = () => 0.5;
+    finishDevelopment();
+    return StudioState.releasedGames[0].score;
+  };
+  const scoreNoStory = finishWithTrait(null);
+  const scoreWithStory = finishWithTrait('story_virtuoso');
+  assert.strictEqual(scoreWithStory, scoreNoStory + 3, "story_virtuoso must add +3 review score bonus");
+} finally {
+  Math.random = origRand45;
+}
+
+console.log("=== TEST 46: Custom Hardware Lab (1975+, Catalog, Royalties, Quality Bonus & Bank UI) ===");
+assert.strictEqual(HARDWARE_CATALOG.length, 4, "HARDWARE_CATALOG must contain 4 hardware items");
+resetTestState(1974, 'de');
+StudioState.staff = [];
+StudioState.cash = 500000;
+assert.strictEqual(developCustomHardware('fm_soundcard_8bit'), false, "Hardware lab must block development before 1975");
+
+StudioState.year = 1975;
+StudioState.cash = 10000;
+assert.strictEqual(developCustomHardware('fm_soundcard_8bit'), false, "Insufficient cash (< 25,000 EUR) must reject hardware development");
+
+StudioState.cash = 100000;
+assert.strictEqual(developCustomHardware('fm_soundcard_8bit'), true, "fm_soundcard_8bit must succeed in 1975");
+assert.strictEqual(StudioState.cash, 75000, "fm_soundcard_8bit must cost 25,000 EUR");
+assert.strictEqual(developCustomHardware('fm_soundcard_8bit'), false, "Duplicate custom hardware development must be blocked");
+assert.strictEqual(developCustomHardware('pcm_wavetable_card'), false, "Future 1989 hardware must stay locked in 1975");
+assert.strictEqual(getOwnedHardwareQualityBonus(), 2, "fm_soundcard_8bit must grant +2 hardware quality bonus");
+
+const cashBeforeHwWeek = StudioState.cash;
+tickWeek();
+assert.strictEqual(StudioState.cash, cashBeforeHwWeek + 900, "tickWeek() must pay +900 EUR weekly hardware royalty");
+assert.strictEqual(StudioState.customHardware[0].totalRoyalties, 900, "Hardware totalRoyalties must accumulate weekly");
+
+// Verify Bank modal weekly cashflow displays hardware revenue
+updateBankModalUI();
+const bankHtml46 = collectMockHtml(document.getElementById('bank-debt-info')) + collectMockHtml(document.getElementById('bank-weekly-flow'));
+assert.ok(bankHtml46.includes('900'), "Bank weekly flow must include 900 EUR hardware royalties");
+
+// Verify finishDevelopment adds +2 hardware quality bonus
+const origRand46 = Math.random;
+try {
+  Math.random = () => 0.5;
+  resetTestState(1980, 'de');
+  StudioState.staff = [];
+  StudioState.activeProject = {
+    title: "HW Compare", theme: "Fantasy", genre: "RPG", audience: "everyone",
+    publisherId: "self_pub", engineId: "engine_basic_1", platform: "C64", platformMarketMulti: 7.5,
+    gameplay: 50, sound: 50, assignedStaffIds: [], progress: 100, features: 10, audioPts: 25, bugs: 0
+  };
+  finishDevelopment();
+  const noHwScore = StudioState.releasedGames[0].score;
+
+  resetTestState(1980, 'de');
+  StudioState.staff = [];
+  StudioState.cash = 100000;
+  developCustomHardware('fm_soundcard_8bit');
+  StudioState.activeProject = {
+    title: "HW Compare", theme: "Fantasy", genre: "RPG", audience: "everyone",
+    publisherId: "self_pub", engineId: "engine_basic_1", platform: "C64", platformMarketMulti: 7.5,
+    gameplay: 50, sound: 50, assignedStaffIds: [], progress: 100, features: 10, audioPts: 25, bugs: 0
+  };
+  finishDevelopment();
+  const withHwScore = StudioState.releasedGames[0].score;
+  assert.strictEqual(withHwScore, noHwScore + 2, "Owned custom hardware must add +2 quality bonus to review score");
+} finally {
+  Math.random = origRand46;
+}
+
+console.log("=== TEST 47: AudioPass Subscription Service (1995+, Pricing, Net Cashflow & Subscribers) ===");
+resetTestState(1994, 'de');
+StudioState.staff = [];
+StudioState.fans = 30000;
+StudioState.releasedGames = [{ id: 1, title: "90s Hit", score: 85, year: 1993 }];
+assert.strictEqual(isSubscriptionUnlocked(1994), false, "AudioPass must be locked before 1995");
+assert.strictEqual(toggleSubscriptionService(9), false, "AudioPass activation before 1995 must fail");
+
+StudioState.year = 1995;
+assert.strictEqual(isSubscriptionUnlocked(1995), true, "AudioPass must unlock in 1995");
+assert.strictEqual(toggleSubscriptionService(14), true, "AudioPass must activate in 1995");
+assert.strictEqual(StudioState.subscriptionService.active, true);
+assert.strictEqual(StudioState.subscriptionService.price, 14);
+assert(StudioState.subscriptionService.subscribers >= 200, "Activation must seed >= 200 initial subscribers");
+
+const subFin47 = calculateSubscriptionWeeklyFinance();
+assert.strictEqual(subFin47.active, true);
+assert.strictEqual(subFin47.net, subFin47.gross - subFin47.upkeep, "Subscription net must equal gross - upkeep");
+assert.strictEqual(calculateWeeklyFinancialFlow().weeklySubNet, subFin47.net, "Bank flow must report exact AudioPass net");
+
+const cashBeforeSubWeek = StudioState.cash;
+const subsBeforeWeek = StudioState.subscriptionService.subscribers;
+tickWeek();
+assert.strictEqual(StudioState.cash, cashBeforeSubWeek + subFin47.net, "tickWeek() must apply AudioPass weekly net cashflow");
+assert.notStrictEqual(StudioState.subscriptionService.subscribers, subsBeforeWeek, "tickWeek() must update subscriber count toward target");
+
+assert.strictEqual(toggleSubscriptionService(14), false, "Second toggle must pause AudioPass cleanly");
+assert.strictEqual(StudioState.subscriptionService.active, false);
+
+console.log("=== TEST 48: Rival Studios, Acquisitions, Weekly Dividends & +10% Fan Boost ===");
+assert.strictEqual(RIVALS_CATALOG.length, 4, "RIVALS_CATALOG must contain 4 rival studios");
+resetTestState(1990, 'de');
+StudioState.staff = [];
+assert.strictEqual(getRivalFanMultiplier(), 1.0, "Baseline fan multiplier without acquisitions must be 1.0");
+
+StudioState.cash = 10000;
+assert.strictEqual(acquireRivalStudio('klangwerk'), false, "Rival acquisition with insufficient cash must fail");
+
+StudioState.cash = 250000;
+assert.strictEqual(acquireRivalStudio('klangwerk'), true, "Acquiring klangwerk (180,000 EUR) must succeed");
+assert.strictEqual(StudioState.cash, 70000, "Acquisition must deduct 180,000 EUR valuation");
+assert.strictEqual(acquireRivalStudio('klangwerk'), false, "Duplicate acquisition of same rival must fail");
+assert.strictEqual(getRivalFanMultiplier(), 1.10, "Acquiring any rival must activate 1.10x fan multiplier");
+
+const cashBeforeDivWeek = StudioState.cash;
+tickWeek();
+assert.strictEqual(StudioState.cash, cashBeforeDivWeek + 750, "tickWeek() must pay klangwerk weekly dividend (+750 EUR)");
+
+// Annual award +10% fan boost & rival reputation delta
+StudioState.year = 1990;
+StudioState.week = 48;
+StudioState.fans = 1000;
+StudioState.releasedGames.push({ id: 50, title: "Rival Slayer", year: 1990, score: 90, audioPts: 100 });
+tickWeek(); // advances to 1991 week 1, triggers handleAnnualAwards
+assert.strictEqual(StudioState.fans, 1000 + 3300 + 880, "GOTY (+3,300) and Audio Award (+880) must reflect +10% rival fan boost");
+const klangwerkAfter = StudioState.rivals.find(r => r.id === 'klangwerk');
+const polyphonAfter = StudioState.rivals.find(r => r.id === 'polyphon');
+assert.strictEqual(klangwerkAfter.reputation, 64, "Acquired subsidiary must gain +2 reputation when studio wins awards");
+assert.strictEqual(polyphonAfter.reputation, 69, "Unacquired rival must lose -1 reputation when player wins GOTY");
+
+console.log("=== TEST 49: Studio Achievements (10 Milestones, Predicates, Rewards & Idempotency) ===");
+assert.strictEqual(ACHIEVEMENTS_CATALOG.length, 10, "ACHIEVEMENTS_CATALOG must contain 10 milestones");
+const expectedAchIds = [
+  'first_release', 'hit_80', 'masterpiece_90', 'custom_engine', 'golden_mic',
+  'millionaire', 'fan_legend', 'hardware_pioneer', 'media_mogul', 'century_veteran'
+];
+expectedAchIds.forEach(aid => {
+  assert.ok(ACHIEVEMENTS_CATALOG.some(a => a.id === aid), `ACHIEVEMENTS_CATALOG must include ${aid}`);
+});
+
+resetTestState(1930, 'de');
+assert.deepStrictEqual(checkAchievements(), [], "Fresh studio must unlock 0 achievements");
+
+StudioState.releasedGames = [{ id: 1, title: "Magnum", year: 2029, score: 92, audioPts: 95 }];
+StudioState.customEngines.push({ id: 'custom_test_eng', name: 'Test Wave Engine', techLevel: 2, year: 1985 });
+StudioState.audioDesignAwards = [{ gameId: 1, title: "Magnum", year: 2029 }];
+StudioState.cash = 1000000;
+StudioState.fans = 100000;
+StudioState.customHardware = [{ id: 'fm_soundcard_8bit', weeklyRoyalty: 900, qualityBonus: 2 }];
+StudioState.rivals[0].acquired = true;
+StudioState.year = 2030;
+
+const rpBeforeAch = StudioState.rp || 0;
+const expectedAchCash = ACHIEVEMENTS_CATALOG.reduce((s, a) => s + (a.rewardCash || 0), 0);
+const expectedAchFans = ACHIEVEMENTS_CATALOG.reduce((s, a) => s + (a.rewardFans || 0), 0);
+const expectedAchRp = ACHIEVEMENTS_CATALOG.reduce((s, a) => s + (a.rewardRp || 0), 0);
+
+const unlocked49 = checkAchievements();
+assert.strictEqual(unlocked49.length, 10, "All 10 milestones must unlock when predicates are satisfied");
+assert.strictEqual(StudioState.achievements.length, 10);
+assert.strictEqual(StudioState.cash, 1000000 + expectedAchCash, "Achievement cash rewards must be added once");
+assert.strictEqual(StudioState.fans, 100000 + expectedAchFans, "Achievement fan rewards must be added once");
+assert.strictEqual(StudioState.rp, rpBeforeAch + expectedAchRp, "Achievement RP rewards must be added once");
+assert.deepStrictEqual(checkAchievements(), [], "Re-calling checkAchievements() must be idempotent");
+assert.strictEqual(StudioState.cash, 1000000 + expectedAchCash, "Idempotent check must not double-pay cash");
+
+console.log("=== TEST 50: Wave 2 Modals, Feature Locks (1975 & 1995), Game-Over Milestones & DE/EN Live Sync ===");
+resetTestState(1970, 'de');
+applyFeatureUnlocksToUI();
+assert.strictEqual(document.getElementById('btn-action-hardware').classList.contains('card-locked'), true, "Hardware card must have card-locked in 1970");
+assert.strictEqual(document.getElementById('badge-lock-hardware').style.display, 'inline-block', "Hardware lock badge must be visible in 1970");
+assert.strictEqual(document.getElementById('btn-action-subscription').classList.contains('card-locked'), true, "AudioPass card must have card-locked in 1970");
+openHardwareModal();
+assert.notStrictEqual(document.getElementById('modal-hardware').style.display, 'flex', "Locked Hardware modal must not open in 1970");
+
+StudioState.year = 1975;
+applyFeatureUnlocksToUI();
+assert.strictEqual(document.getElementById('btn-action-hardware').classList.contains('card-locked'), false, "Hardware card must unlock in 1975");
+assert.strictEqual(document.getElementById('badge-lock-hardware').style.display, 'none', "Hardware lock badge must hide in 1975");
+assert.strictEqual(document.getElementById('btn-action-subscription').classList.contains('card-locked'), true, "AudioPass card must remain locked in 1975");
+openSubscriptionModal();
+assert.notStrictEqual(document.getElementById('modal-subscription').style.display, 'flex', "Locked AudioPass modal must not open in 1975");
+
+StudioState.year = 1995;
+StudioState.cash = 300000;
+StudioState.fans = 20000;
+applyFeatureUnlocksToUI();
+assert.strictEqual(document.getElementById('btn-action-subscription').classList.contains('card-locked'), false, "AudioPass card must unlock in 1995");
+assert.strictEqual(document.getElementById('badge-lock-subscription').style.display, 'none', "AudioPass lock badge must hide in 1995");
+
+openHardwareModal();
+assert.strictEqual(document.getElementById('modal-hardware').style.display, 'flex');
+assert.strictEqual(document.getElementById('hardware-list').children.length, 4);
+handleDevelopCustomHardware('fm_soundcard_8bit');
+assert.ok(document.getElementById('hardware-summary').textContent.includes('1 / 4'), "Hardware summary must reflect 1 / 4 built");
+
+openSubscriptionModal();
+assert.strictEqual(document.getElementById('modal-subscription').style.display, 'flex');
+onSubscriptionPriceChange(19);
+assert.strictEqual(StudioState.subscriptionService.price, 19);
+handleToggleSubscriptionService();
+assert.strictEqual(StudioState.subscriptionService.active, true);
+assert.strictEqual(document.getElementById('btn-toggle-subscription').getAttribute('aria-pressed'), 'true');
+assert.ok(document.getElementById('subscription-status-panel').innerHTML.length > 0);
+
+openRivalsModal();
+assert.strictEqual(document.getElementById('modal-rivals').style.display, 'flex');
+assert.strictEqual(document.getElementById('rivals-list').children.length, 4);
+handleAcquireRival('klangwerk');
+assert.ok(document.getElementById('rivals-summary').innerHTML.includes('1 / 4'), "Rivals summary must reflect 1 / 4 acquired");
+
+openAchievementsModal();
+assert.strictEqual(document.getElementById('modal-achievements').style.display, 'flex');
+assert.strictEqual(document.getElementById('achievements-list').children.length, 10, "Achievements modal must render all 10 milestones");
+
+showGameOverModal();
+assert.ok(document.getElementById('game-over-stats').innerHTML.includes('Meilensteine'), "Game-over stats in DE must show milestones row");
+
+toggleLanguage(); // -> EN
+assert.strictEqual(StudioState.language, 'en');
+refreshOpenWave2Modals();
+showGameOverModal();
+assert.ok(document.getElementById('game-over-stats').innerHTML.includes('Milestones'), "Game-over stats in EN must localize milestones row");
+toggleLanguage(); // -> DE
+closeAllModals();
+
+console.log("=== TEST 51: Wave 2 DE/EN Key Completeness (327+ Keys) & Zero Mojibake Across All UI/System Files ===");
+const deKeys51 = Object.keys(TRANSLATIONS.de);
+const enKeys51 = Object.keys(TRANSLATIONS.en);
+assert(deKeys51.length >= 327, `Expected >= 327 DE keys, got ${deKeys51.length}`);
+assert.strictEqual(deKeys51.length, enKeys51.length, "DE and EN translation key counts must match identically");
+
+const wave2RequiredKeys = [
+  'remaster_btn', 'remaster_btn_aria',
+  'hardware_summary_label', 'hardware_developed_badge', 'hardware_locked_year',
+  'hardware_develop_btn', 'hardware_stats_line', 'hardware_modal_opened',
+  'audiopass_title', 'subscription_modal_opened', 'subscription_tier_budget',
+  'subscription_tier_standard', 'subscription_tier_plus', 'subscription_tier_pro',
+  'subscription_tier_ultra', 'subscription_price_tier', 'subscription_status_active',
+  'subscription_status_paused', 'subscription_subscribers_label', 'subscription_target_label',
+  'subscription_gross_label', 'subscription_upkeep_label', 'subscription_net_label',
+  'subscription_pause_btn', 'subscription_activate_btn',
+  'rivals_modal_opened', 'rivals_summary_label', 'rivals_fan_boost_active',
+  'rival_acquired_badge', 'rival_acquire_btn', 'rival_stats_line',
+  'milestones_modal_opened', 'milestones_summary_label', 'milestone_reward_line',
+  'milestone_unlocked_badge', 'milestone_locked_badge', 'milestones_title'
+];
+wave2RequiredKeys.forEach(key => {
+  assert.ok(typeof TRANSLATIONS.de[key] === 'string' && TRANSLATIONS.de[key].length > 0, `Wave 2 DE key ${key} must exist`);
+  assert.ok(typeof TRANSLATIONS.en[key] === 'string' && TRANSLATIONS.en[key].length > 0, `Wave 2 EN key ${key} must exist`);
+});
+
+[
+  'www/js/ui/hud.js',
+  'www/js/ui/modals.js',
+  'www/js/systems/dev_system.js',
+  'www/js/systems/simulation_system.js',
+  'www/js/systems/staff_system.js',
+  'www/js/systems/finance_system.js',
+  'www/js/systems/marketing_system.js'
+].forEach(relPath => {
+  const fileText = fs.readFileSync(relPath, 'utf8');
+  mojibakePatterns.forEach(pat => {
+    assert.strictEqual(fileText.includes(pat), false, `Mojibake pattern "${pat}" found in ${relPath}`);
+  });
+});
+
+['modal-hardware', 'modal-subscription', 'modal-rivals', 'modal-achievements',
+ 'btn-action-hardware', 'btn-action-subscription', 'btn-action-rivals', 'btn-action-achievements'
+].forEach(domId => {
+  assert.ok(htmlSrc.includes(`id="${domId}"`), `index.html must contain Wave 2 element id="${domId}"`);
+});
+
+console.log("=== TEST 52: Save/Load Persistence Roundtrip & Legacy Save Backward Compatibility ===");
+localStorage.clear();
+resetTestState(2005, 'en');
+StudioState.cash = 420000;
+StudioState.releasedGames = [{ id: 77, title: "Classic Hit", year: 1992, score: 88, audioPts: 92, remastered: true }];
+StudioState.customHardware = [{ ...HARDWARE_CATALOG[0], builtYear: 1980, totalRoyalties: 18000 }];
+StudioState.rivals[0].acquired = true;
+StudioState.rivals[0].acquiredYear = 2001;
+StudioState.subscriptionService = { active: true, price: 19, subscribers: 450 };
+StudioState.achievements = ['first_release', 'hardware_pioneer'];
+StudioState.staff[0].trait = 'bug_hunter';
+
+saveGame();
+resetTestState(1930, 'de');
+assert.strictEqual(StudioState.achievements.length, 0);
+loadGame();
+assert.strictEqual(StudioState.year, 2005);
+assert.strictEqual(StudioState.customHardware.length, 1);
+assert.strictEqual(StudioState.customHardware[0].id, 'fm_soundcard_8bit');
+assert.strictEqual(StudioState.rivals[0].acquired, true);
+assert.strictEqual(StudioState.subscriptionService.active, true);
+assert.strictEqual(StudioState.subscriptionService.price, 19);
+assert.strictEqual(StudioState.subscriptionService.subscribers, 450);
+assert.deepStrictEqual(StudioState.achievements, ['first_release', 'hardware_pioneer']);
+assert.strictEqual(StudioState.staff[0].trait, 'bug_hunter');
+assert.strictEqual(StudioState.releasedGames[0].remastered, true);
+
+// Legacy Wave 1 save without Wave 2 fields must not crash Wave 2 systems/UI
+localStorage.clear();
+localStorage.setItem('ast_savegame_v4', JSON.stringify({
+  studioName: "Legacy Sound",
+  year: 1998,
+  week: 10,
+  cash: 60000,
+  fans: 5000,
+  staff: [{ id: 1, name: "Founder", role: "sound", skill: 2, fatigue: 0 }],
+  releasedGames: []
+}));
+resetTestState(1930, 'de');
+delete StudioState.rivals;
+delete StudioState.customHardware;
+delete StudioState.subscriptionService;
+delete StudioState.achievements;
+loadGame();
+assert.strictEqual(StudioState.studioName, "Legacy Sound");
+assert.ok(Array.isArray(ensureRivalsState()) && ensureRivalsState().length === 4, "ensureRivalsState() must backfill missing rivals");
+const legacySubFin = calculateSubscriptionWeeklyFinance();
+assert.strictEqual(legacySubFin.active, false, "calculateSubscriptionWeeklyFinance() must safely default missing subscription state");
+assert.strictEqual(getOwnedHardwareQualityBonus(), 0, "getOwnedHardwareQualityBonus() must return 0 when customHardware is absent");
+assert.deepStrictEqual(checkAchievements(), [], "checkAchievements() must safely initialize missing achievements array");
+
+console.log("\nALL 52 SIMULATION, TYCOON LOOP & TIMELINE INTEGRATION TESTS PASSED 100%!");
 process.exit(0);
 

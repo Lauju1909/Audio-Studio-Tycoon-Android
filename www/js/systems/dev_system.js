@@ -198,6 +198,175 @@ function startDevelopment() {
   return true;
 }
 
+/**
+ * Returns non-vacation staff members assigned to a project.
+ */
+function getActiveAssignedStaff(project) {
+  const staffList = Array.isArray(StudioState && StudioState.staff) ? StudioState.staff : [];
+  const hasFilter = project && Array.isArray(project.assignedStaffIds);
+  return staffList.filter(emp => {
+    if (!emp || (emp.onVacationWeeks || 0) > 0) return false;
+    return hasFilter ? project.assignedStaffIds.includes(emp.id) : true;
+  });
+}
+
+/**
+ * Aggregates STAFF_TRAITS multipliers and flat release bonuses for active project staff.
+ */
+function getStaffTraitModifiers(assignedStaff) {
+  let foleyCount = 0;
+  let synthCount = 0;
+  let bugHunterCount = 0;
+  let storyCount = 0;
+  assignedStaff.forEach(emp => {
+    if (emp.trait === 'foley_master') foleyCount += 1;
+    else if (emp.trait === 'synth_pioneer') synthCount += 1;
+    else if (emp.trait === 'bug_hunter') bugHunterCount += 1;
+    else if (emp.trait === 'story_virtuoso') storyCount += 1;
+  });
+  return {
+    audioMulti: 1 + (0.15 * foleyCount),
+    featureMulti: 1 + (0.15 * synthCount),
+    bugChanceMulti: Math.pow(0.7, bugHunterCount),
+    storyScoreBonus: 3 * storyCount
+  };
+}
+
+/**
+ * Sums qualityBonus across all owned custom studio hardware units.
+ */
+function getOwnedHardwareQualityBonus() {
+  const owned = Array.isArray(StudioState && StudioState.customHardware) ? StudioState.customHardware : [];
+  const catalog = (typeof HARDWARE_CATALOG !== 'undefined' && Array.isArray(HARDWARE_CATALOG))
+    ? HARDWARE_CATALOG
+    : getGlobalValue('HARDWARE_CATALOG', []);
+  return owned.reduce((sum, item) => {
+    if (item && typeof item === 'object' && typeof item.qualityBonus === 'number') {
+      return sum + item.qualityBonus;
+    }
+    const hwId = (item && typeof item === 'object') ? item.id : item;
+    const cat = catalog.find(entry => entry.id === hwId);
+    return sum + (cat && typeof cat.qualityBonus === 'number' ? cat.qualityBonus : 0);
+  }, 0);
+}
+
+/**
+ * Starts a remaster project for a previously released non-remaster game onto the latest active platform.
+ */
+function startRemasterProject(gameId) {
+  const isEn = StudioState.language === 'en';
+  if (StudioState.activeProject) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('already_developing'));
+    }
+    return false;
+  }
+  const released = Array.isArray(StudioState.releasedGames) ? StudioState.releasedGames : [];
+  const orig = gameId
+    ? released.find(g => String(g.id) === String(gameId))
+    : released[0];
+  if (!orig) return false;
+
+  const alreadyRemastered = Boolean(orig.isRemaster)
+    || Boolean(orig.remastered)
+    || String(orig.title || '').includes('Remastered')
+    || released.some(g => g.remasteredFromId != null && String(g.remasteredFromId) === String(orig.id));
+  if (alreadyRemastered) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn
+        ? `${orig.title} has already been remastered!`
+        : `${orig.title} wurde bereits als Remaster neu aufgelegt!`);
+    }
+    return false;
+  }
+
+  const cost = 2500;
+  if (StudioState.cash < cost) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(cost) }));
+    }
+    return false;
+  }
+
+  const availFn = (typeof getAvailablePlatforms === 'function')
+    ? getAvailablePlatforms
+    : getGlobalValue('getAvailablePlatforms', null);
+  const allPlats = (typeof PLATFORMS !== 'undefined') ? PLATFORMS : getGlobalValue('PLATFORMS', []);
+  const availablePlats = (typeof availFn === 'function')
+    ? availFn(StudioState.year, StudioState.unlockedPlatforms)
+    : allPlats;
+  const platform = (availablePlats && availablePlats.length > 0)
+    ? availablePlats.reduce((best, pl) => {
+        const bestYear = best.unlock_year != null ? best.unlock_year : 0;
+        const plYear = pl.unlock_year != null ? pl.unlock_year : 0;
+        if (plYear > bestYear) return pl;
+        if (plYear === bestYear && (pl.market_multi || 0) >= (best.market_multi || 0)) return pl;
+        return best;
+      }, availablePlats[0])
+    : { name: orig.platform || 'Hand-Abakus', license_fee: 0, market_multi: orig.platformMulti || 1.0 };
+
+  const staffList = Array.isArray(StudioState.staff) ? StudioState.staff : [];
+  const activeIds = staffList.filter(e => (e.onVacationWeeks || 0) <= 0).map(e => e.id);
+  const assignedStaffIds = activeIds.length > 0 ? activeIds : (staffList.length > 0 ? [staffList[0].id] : []);
+
+  const engines = Array.isArray(StudioState.customEngines) ? StudioState.customEngines : [];
+  const latestEngine = engines.length > 0 ? engines[engines.length - 1] : null;
+  const remasterTitle = `${orig.title} Remastered`;
+
+  StudioState.cash -= cost;
+  StudioState.activeProject = {
+    title: remasterTitle,
+    theme: orig.theme || 'Fantasy',
+    genre: orig.genre || 'RPG',
+    engineId: (latestEngine && latestEngine.id) || orig.engineId || 'engine_basic_1',
+    gameplay: orig.gameplay !== undefined ? orig.gameplay : 50,
+    sound: orig.sound !== undefined ? orig.sound : 50,
+    audience: orig.audience || 'everyone',
+    publisherId: 'self_pub',
+    platform: platform.name,
+    platformMarketMulti: platform.market_multi || 1.0,
+    assignedStaffIds,
+    progress: 35,
+    features: Math.round((orig.audioPts || 20) * 0.25),
+    audioPts: Math.round((orig.audioPts || 20) * 0.35),
+    bugs: 0,
+    polishPasses: 0,
+    decisionMade: false,
+    qualityBoost: 5,
+    sequelNumber: orig.sequelNumber || 1,
+    isRemaster: true,
+    remasteredFromId: orig.id
+  };
+
+  const devCard = document.getElementById('active-project-card');
+  if (devCard) devCard.style.display = 'flex';
+  const devTitle = document.getElementById('dev-game-title');
+  if (devTitle) devTitle.textContent = remasterTitle;
+  const pctEl = document.getElementById('dev-progress-percent');
+  if (pctEl) pctEl.textContent = '35%';
+  const barEl = document.getElementById('dev-progress-bar');
+  if (barEl) barEl.style.width = '35%';
+  const finishBtn = document.getElementById('btn-finish-dev');
+  if (finishBtn) finishBtn.style.display = 'none';
+  const polishBtn = document.getElementById('btn-polish-dev');
+  if (polishBtn) polishBtn.style.display = 'inline-block';
+  const boostBtn = document.getElementById('btn-boost-dev');
+  if (boostBtn) boostBtn.style.display = 'inline-block';
+
+  if (typeof AudioEngine !== 'undefined') {
+    AudioEngine.playSound('buy');
+    AudioEngine.vibrate(40);
+    AudioEngine.speak(isEn
+      ? `Remaster started: ${remasterTitle} for ${platform.name} (35% base progress, +5 quality boost)!`
+      : `Remaster gestartet: ${remasterTitle} für ${platform.name} (35% Basisfortschritt, +5 Qualitätsbonus)!`);
+  }
+  if (typeof updateHUD === 'function') updateHUD();
+  return true;
+}
+
 function tickProjectProgress() {
   const p = StudioState.activeProject;
   if (!p) return;
@@ -229,14 +398,19 @@ function tickProjectProgress() {
   let soundSkill = 0;
   let writerSkill = 0;
 
-  StudioState.staff.forEach(emp => {
-    if (p.assignedStaffIds.includes(emp.id) && emp.onVacationWeeks <= 0) {
-      if (emp.role === 'coder') coderSkill += emp.skill;
-      if (emp.role === 'sound') soundSkill += emp.skill;
-      if (emp.role === 'writer') writerSkill += emp.skill;
+  const activeAssigned = getActiveAssignedStaff(p);
+  const traitMods = getStaffTraitModifiers(activeAssigned);
 
-      emp.fatigue = Math.min(100, emp.fatigue + Math.floor(Math.random() * 3) + 2);
-    }
+  activeAssigned.forEach(emp => {
+    if (emp.role === 'coder') coderSkill += emp.skill;
+    if (emp.role === 'sound') soundSkill += emp.skill;
+    if (emp.role === 'writer') writerSkill += emp.skill;
+
+    const baseFatigueGain = Math.floor(Math.random() * 3) + 2;
+    const fatigueGain = emp.trait === 'crunch_proof'
+      ? Math.max(1, Math.round(baseFatigueGain * 0.7))
+      : baseFatigueGain;
+    emp.fatigue = Math.min(100, (emp.fatigue || 0) + fatigueGain);
   });
 
   progressStep += coderSkill * 3;
@@ -246,7 +420,7 @@ function tickProjectProgress() {
   const sndFocus = 0.65 + ((p.sound !== undefined ? p.sound : 60) / 100) * 0.7;
 
   const rawFeat = Math.floor(Math.random() * 3) + 1 + Math.round(coderSkill * 1.5) + Math.round(writerSkill * 2) + Math.round(engineTechBonus / 3);
-  const featGained = Math.max(1, Math.round(rawFeat * gpFocus));
+  const featGained = Math.max(1, Math.round(rawFeat * gpFocus * traitMods.featureMulti));
   p.features += featGained;
 
   let soundGained = Math.floor(Math.random() * 4) + 2 + Math.round(soundSkill * 3) + Math.round(engineAudioBonus / 2);
@@ -255,9 +429,12 @@ function tickProjectProgress() {
   if (totalAudioPct > 0) {
     soundGained = Math.round(soundGained * (1 + totalAudioPct / 100));
   }
+  if (traitMods.audioMulti !== 1) {
+    soundGained = Math.max(1, Math.round(soundGained * traitMods.audioMulti));
+  }
   p.audioPts += soundGained;
 
-  let bugChance = 0.35 * bugChanceMultiplier;
+  let bugChance = 0.35 * bugChanceMultiplier * traitMods.bugChanceMulti;
   const avgFatigue = p.assignedStaffIds.length > 0 ?
     p.assignedStaffIds.map(id => StudioState.staff.find(e => e.id === id)?.fatigue || 0).reduce((a, b) => a + b, 0) / p.assignedStaffIds.length : 0;
 
@@ -469,6 +646,11 @@ function finishDevelopment() {
     audienceSalesMulti = 0.75;
   }
 
+  const activeAssigned = getActiveAssignedStaff(p);
+  const traitMods = getStaffTraitModifiers(activeAssigned);
+  const hwQualityBonus = getOwnedHardwareQualityBonus();
+  finalScore += traitMods.storyScoreBonus + hwQualityBonus;
+
   finalScore = Math.min(99, Math.max(45, finalScore + Math.floor(Math.random() * 7) - 3));
 
   let marketingMult = 1.0;
@@ -533,6 +715,8 @@ function finishDevelopment() {
     bugs: p.bugs || 0,
     synergyStars: stars,
     sequelNumber: p.sequelNumber || 1,
+    isRemaster: Boolean(p.isRemaster),
+    remasteredFromId: p.remasteredFromId || null,
     postMortemDone: false,
     postMortemReport: '',
     patched: false,
@@ -543,6 +727,11 @@ function finishDevelopment() {
     week: StudioState.week,
     year: StudioState.year
   };
+
+  if (p.isRemaster && p.remasteredFromId != null && Array.isArray(StudioState.releasedGames)) {
+    const origGame = StudioState.releasedGames.find(g => String(g.id) === String(p.remasteredFromId));
+    if (origGame) origGame.remastered = true;
+  }
 
   StudioState.releasedGames.unshift(finishedGame);
 
@@ -725,6 +914,7 @@ function releaseGameDLC(gameId) {
   if (!target) return;
   target.generateRandomTitle = generateRandomTitle;
   target.startDevelopment = startDevelopment;
+  target.startRemasterProject = startRemasterProject;
   target.tickProjectProgress = tickProjectProgress;
   target.polishActiveProject = polishActiveProject;
   target.boostActiveProjectAudio = boostActiveProjectAudio;
@@ -736,8 +926,8 @@ function releaseGameDLC(gameId) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    generateRandomTitle, startDevelopment, tickProjectProgress,
-    polishActiveProject, boostActiveProjectAudio, finishDevelopment,
-    analyzePostMortem, releaseGamePatch, releaseGameDLC
+    generateRandomTitle, startDevelopment, startRemasterProject,
+    tickProjectProgress, polishActiveProject, boostActiveProjectAudio,
+    finishDevelopment, analyzePostMortem, releaseGamePatch, releaseGameDLC
   };
 }

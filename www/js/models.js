@@ -66,8 +66,12 @@ function createDefaultState(startYear = 1930) {
       { id: 'engine_basic_1', name: 'Monophonic 8-Bit Engine', features: ['basic_audio'], audioBonus: 5, techBonus: 5, bugReduction: 0, createdYear: initYear, licensedOut: false, totalRoyalties: 0 }
     ],
     staff: [
-      { id: 1, name: "Max Melodie", role: "sound", salary: 1500, skill: 2, fatigue: 0, morale: 100, onVacationWeeks: 0 }
+      { id: 1, name: "Max Melodie", role: "sound", salary: 1500, skill: 2, fatigue: 0, morale: 100, onVacationWeeks: 0, trait: "foley_master" }
     ],
+    rivals: (typeof RIVALS_CATALOG !== 'undefined' ? RIVALS_CATALOG : []).map(r => ({ ...r, acquired: false })),
+    customHardware: [],
+    subscriptionService: { active: false, price: 9, subscribers: 0 },
+    achievements: [],
     marketingCampaign: null,
     activeProject: null,
     releasedGames: [],
