@@ -23,15 +23,15 @@
     </div>
     <div class="header-controls">
       <button type="button" class="btn-icon" id="btn-toggle-lang" aria-label="Sprache umschalten" onclick="toggleLanguage()" title="Sprache / Language">🇩🇪 DE</button>
-      <button type="button" class="btn-icon" id="btn-toggle-tts" aria-label="Sprachausgabe umschalten" onclick="toggleTTS()" title="TTS Vorlesen">🔊</button>
-      <button type="button" class="btn-icon" aria-label="Feedback an Lauju senden" onclick="openFeedbackModal()" title="Feedback">💬</button>
+      <button type="button" class="btn-icon" id="btn-toggle-tts" aria-label="Sprachausgabe umschalten" data-i18n-aria="tts_toggle_aria" onclick="toggleTTS()" title="TTS Vorlesen">🔊</button>
+      <button type="button" class="btn-icon" aria-label="Feedback senden" data-i18n-aria="feedback_open_aria" data-i18n-title="feedback_open_aria" onclick="openFeedbackModal()" title="Feedback">💬</button>
       <button type="button" class="btn-icon" aria-label="Spielstand sichern" onclick="saveGamePrompt()" title="Speichern" data-i18n-title="save_game_title" data-i18n-aria="save_game_title">💾</button>
-      <button type="button" class="btn-icon" aria-label="Neustart" onclick="resetGame()" title="Reset" style="color: var(--red);">🔄</button>
+      <button type="button" class="btn-icon" aria-label="Neustart" data-i18n-aria="reset_game_title" data-i18n-title="reset_game_title" onclick="resetGame()" title="Reset" style="color: var(--red);">🔄</button>
     </div>
   </header>
 
   <!-- DASHBOARD / STATUSLEISTE -->
-  <section class="hud-bar" aria-label="Finanz- und Studio-Übersicht">
+  <section class="hud-bar" aria-label="Finanz- und Studio-Übersicht" data-i18n-aria="hud_overview_aria">
     <div class="hud-item" id="hud-cash">
       <span class="hud-label" data-i18n="cash_label">Guthaben:</span>
       <span class="hud-val text-green" id="val-cash">50.000 €</span>
@@ -47,20 +47,20 @@
   </section>
 
   <!-- ZEITLEISTE & HISTORISCHE PROGRESSION -->
-  <section class="timeline-bar-container" aria-label="Historischer Zeitstrahl">
+  <section class="timeline-bar-container" aria-label="Historischer Zeitstrahl" data-i18n-aria="timeline_bar_aria">
     <div class="timeline-info-row">
       <span id="timeline-current-era-text" style="font-size: 0.82rem; font-weight: 600; color: #a5b4fc;">Pionier-Ära (1930–1949)</span>
-      <span id="hud-trend-badge" class="badge" style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.18); color: #fde68a;">🔥 Trend: Radio-Drama + Action</span>
+      <span id="hud-trend-badge" class="badge" style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.18); color: #fde68a;">Trend: Radio-Drama + Action</span>
       <span id="timeline-progress-label" style="font-size: 0.8rem; color: #94a3b8;">1930 / 2026</span>
     </div>
     <div class="progress-bar-container" style="height: 6px; margin-top: 4px;" aria-hidden="true">
       <div class="progress-bar-fill" id="timeline-progress-fill" style="width: 0%; background: linear-gradient(90deg, #6366f1, #a855f7);"></div>
     </div>
-    <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;" role="group" aria-label="Zeitsteuerung">
-      <button type="button" class="btn btn-secondary" id="btn-time-pause" style="padding: 4px 10px; font-size: 0.78rem;" onclick="togglePause()">⏸️ Pause</button>
-      <button type="button" class="btn btn-secondary" id="btn-time-1x" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setGameSpeed(1)">▶️ 1x</button>
-      <button type="button" class="btn btn-secondary" id="btn-time-2x" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setGameSpeed(2)">⏩ 2x</button>
-      <button type="button" class="btn btn-primary" id="btn-time-next" style="padding: 4px 10px; font-size: 0.78rem;" onclick="manualTickWeek()">⏭️ +1 Woche</button>
+    <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;" role="group" aria-label="Zeitsteuerung" data-i18n-aria="time_controls_aria">
+      <button type="button" class="btn btn-secondary" id="btn-time-pause" aria-label="Pause" style="padding: 4px 10px; font-size: 0.78rem;" onclick="togglePause()">⏸️ Pause</button>
+      <button type="button" class="btn btn-secondary" id="btn-time-1x" aria-label="1x Geschwindigkeit" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setGameSpeed(1)">▶️ 1x</button>
+      <button type="button" class="btn btn-secondary" id="btn-time-2x" aria-label="2x Geschwindigkeit" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setGameSpeed(2)">⏩ 2x</button>
+      <button type="button" class="btn btn-primary" id="btn-time-next" aria-label="+1 Woche" style="padding: 4px 10px; font-size: 0.78rem;" onclick="manualTickWeek()">⏭️ +1 Woche</button>
     </div>
   </section>
 
@@ -92,9 +92,9 @@
         <div class="progress-bar-fill" id="dev-progress-bar" style="width: 0%;"></div>
       </div>
       <div class="dev-stats-grid">
-        <div>💡 Features: <strong id="dev-pts-feat">0</strong></div>
-        <div>🎵 Audio-Punkte: <strong id="dev-pts-sound">0</strong></div>
-        <div>🐛 Bugs: <strong id="dev-pts-bugs" class="text-red">0</strong></div>
+        <div><span aria-hidden="true">💡</span> <span data-i18n="features_stat">Features</span>: <strong id="dev-pts-feat">0</strong></div>
+        <div><span aria-hidden="true">🎵</span> <span data-i18n="sound_stat">Audio-Punkte</span>: <strong id="dev-pts-sound">0</strong></div>
+        <div><span aria-hidden="true">🐛</span> <span data-i18n="bugs_stat">Bugs</span>: <strong id="dev-pts-bugs" class="text-red">0</strong></div>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
         <button type="button" class="btn btn-secondary" id="btn-polish-dev" onclick="polishActiveProject()" style="font-size: 0.82rem; padding: 6px 10px;">
@@ -112,7 +112,7 @@
     <!-- HAUPTAKTIONEN -->
     <div class="actions-grid">
       <button type="button" class="action-card card-primary" id="btn-action-new-game" onclick="openDevModal()">
-        <span class="action-icon">🚀</span>
+        <span class="action-icon" aria-hidden="true">🚀</span>
         <div class="action-info">
           <h3 data-i18n="new_game">Neues Spiel entwickeln</h3>
           <p data-i18n="new_game_desc">Thema, Genre, Sound-Engine und Schwerpunkte wählen</p>
@@ -120,7 +120,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-contracts" onclick="openContractsModal()">
-        <span class="action-icon">📋</span>
+        <span class="action-icon" aria-hidden="true">📋</span>
         <div class="action-info">
           <h3 data-i18n="contracts">Auftragsarbeiten</h3>
           <p data-i18n="contracts_desc">Radio-Jingles, Hörspiel-Foley &amp; Mastering für sicheres Sofortgeld</p>
@@ -128,7 +128,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-research" onclick="openResearchModal()">
-        <span class="action-icon">🔬</span>
+        <span class="action-icon" aria-hidden="true">🔬</span>
         <div class="action-info">
           <h3 data-i18n="research">Forschungslabor</h3>
           <p data-i18n="research_desc">Neue Genres, Audio-Technologien &amp; Plattformen freischalten</p>
@@ -136,7 +136,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-engine" onclick="openEngineModal()">
-        <span class="action-icon">⚙️</span>
+        <span class="action-icon" aria-hidden="true">⚙️</span>
         <div class="action-info">
           <h3 data-i18n="custom_engine">Engine-Werkstatt</h3>
           <p data-i18n="custom_engine_desc">Eigene Sound-Engines für Projekte bauen</p>
@@ -144,7 +144,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-staff" onclick="openStaffModal()">
-        <span class="action-icon">👥</span>
+        <span class="action-icon" aria-hidden="true">👥</span>
         <div class="action-info">
           <h3 data-i18n="staff">Personal &amp; Team</h3>
           <p data-i18n="staff_desc">Audio-Designer, Programmierer anheuern &amp; Urlaub verwalten</p>
@@ -152,7 +152,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-marketing" onclick="openMarketingModal()">
-        <span class="action-icon">📢</span>
+        <span class="action-icon" aria-hidden="true">📢</span>
         <div class="action-info">
           <h3 data-i18n="marketing">Marketing &amp; Hype</h3>
           <p data-i18n="marketing_desc">Kampagnen starten und Bekanntheit steigern</p>
@@ -160,7 +160,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-soundcon" onclick="openSoundConModal()">
-        <span class="action-icon">🎪</span>
+        <span class="action-icon" aria-hidden="true">🎪</span>
         <div class="action-info">
           <div style="display: flex; align-items: center;">
             <h3 data-i18n="soundcon">SoundCon Messe</h3>
@@ -171,7 +171,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-label" onclick="openLabelModal()">
-        <span class="action-icon">💿</span>
+        <span class="action-icon" aria-hidden="true">💿</span>
         <div class="action-info">
           <div style="display: flex; align-items: center;">
             <h3 data-i18n="label">Soundtrack-Label</h3>
@@ -182,7 +182,7 @@
       </button>
 
       <button type="button" class="action-card" id="btn-action-bank" onclick="openBankModal()">
-        <span class="action-icon">🏦</span>
+        <span class="action-icon" aria-hidden="true">🏦</span>
         <div class="action-info">
           <h3 data-i18n="bank">Bank &amp; Kredite</h3>
           <p data-i18n="bank_desc">Kontoführung, Darlehen aufnehmen oder tilgen</p>
@@ -191,9 +191,9 @@
     </div>
 
     <!-- VERÖFFENTLICHTE SPIELE / HISTORIE -->
-    <section class="history-section" aria-label="Bisherige Veröffentlichungen">
-      <h2 class="section-title" data-i18n="achievements">🏆 Bisherige Erfolge</h2>
-      <div id="released-games-list" class="released-list">
+    <section class="history-section" aria-label="Bisherige Veröffentlichungen" data-i18n-aria="history_section_aria">
+      <h2 class="section-title" data-i18n="achievements">Bisherige Erfolge</h2>
+      <div id="released-games-list" class="released-list" aria-live="polite">
         <p class="empty-hint" data-i18n="no_games_yet">Noch kein Spiel veröffentlicht. Starte dein erstes Projekt oben!</p>
       </div>
     </section>
@@ -202,20 +202,20 @@
   <!-- MODAL: ENTWICKLUNGS-WIZARD -->
   <div id="modal-dev" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="dev-modal-title" style="display: none;">
     <div class="modal-card">
-      <h2 id="dev-modal-title">🚀 Neues Spiel konzipieren</h2>
+      <h2 id="dev-modal-title" data-i18n="dev_wizard_title">Neues Audio-Game konzipieren</h2>
       
       <div class="form-group">
-        <label for="input-game-name">Titel deines Spiels:</label>
+        <label for="input-game-name" data-i18n="game_title_label">Titel deines Spiels:</label>
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="input-game-name" value="Echo des Schicksals" placeholder="Titel eingeben..." style="flex: 1;">
-          <button type="button" class="btn btn-secondary" onclick="generateRandomTitle()" title="Zufälliger Titel" data-i18n-title="random_title" data-i18n-aria="random_title">🎲</button>
+          <input type="text" id="input-game-name" value="Echo des Schicksals" placeholder="Titel eingeben..." data-i18n-placeholder="title_placeholder" style="flex: 1;">
+          <button type="button" class="btn btn-secondary" onclick="generateRandomTitle()" title="Zufälliger Titel" data-i18n-title="random_title" data-i18n-aria="random_title"><span aria-hidden="true">🎲</span></button>
         </div>
       </div>
 
       <div class="form-grid">
         <div class="form-group">
           <label for="select-theme" data-i18n="theme_label">Thema:</label>
-          <select id="select-theme">
+          <select id="select-theme" onchange="updateDevSynergyPreview()">
             <option value="Fantasy">Fantasy (Magie &amp; Mythen)</option>
             <option value="SciFi">Science-Fiction (Weltraum)</option>
             <option value="Cyberpunk">Cyberpunk (Synthesizer &amp; Neon)</option>
@@ -227,7 +227,7 @@
 
         <div class="form-group">
           <label for="select-genre" data-i18n="genre_label">Genre:</label>
-          <select id="select-genre">
+          <select id="select-genre" onchange="updateDevSynergyPreview()">
             <option value="RPG">Rollenspiel (RPG)</option>
             <option value="Action">Action &amp; Abenteuer</option>
             <option value="Simulation">Simulation</option>
@@ -237,20 +237,38 @@
         </div>
       </div>
 
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="select-audience" data-i18n="audience_label">Zielgruppe:</label>
+          <select id="select-audience" onchange="updateDevSynergyPreview()">
+            <option value="everyone" data-i18n="audience_everyone">Jeder</option>
+            <option value="youth" data-i18n="audience_youth">Jugendliche</option>
+            <option value="hardcore" data-i18n="audience_hardcore">Hardcore-Gamer</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-publisher" data-i18n="publisher_label">Publisher / Vertrieb:</label>
+          <select id="select-publisher" onchange="updateDevSynergyPreview()">
+            <option value="self_pub">Eigenverlag (Self-Publishing)</option>
+          </select>
+        </div>
+      </div>
+
       <div class="form-group">
-        <label for="select-sequel">Reihe / Fortsetzung:</label>
+        <label for="select-sequel" data-i18n="sequel_label">Reihe / Fortsetzung:</label>
         <select id="select-sequel">
-          <option value="">Neue Original-Produktion</option>
+          <option value="" data-i18n="sequel_original_opt">Neue Original-Produktion</option>
         </select>
       </div>
 
-      <div id="dev-synergy-preview" class="badge" style="display: block; padding: 8px 10px; margin-bottom: 10px; background: rgba(99, 102, 241, 0.15); color: #e0e7ff; font-size: 0.82rem;" aria-live="polite">
-        ⭐⭐⭐ Thema + Genre Synergie-Vorschau
+      <div id="dev-synergy-preview" class="badge" style="display: block; padding: 8px 10px; margin-bottom: 10px; background: rgba(99, 102, 241, 0.15); color: #e0e7ff; font-size: 0.82rem;" role="status" aria-live="polite" aria-atomic="true">
+        3/3 Sterne: Thema + Genre + Zielgruppe Synergie-Vorschau
       </div>
 
       <div class="form-group">
         <label for="select-platform" data-i18n="platform_label">Ziel-Plattform:</label>
-        <select id="select-platform">
+        <select id="select-platform" onchange="updateDevSynergyPreview()">
           <!-- Dynamisch nach Jahr gefiltert -->
         </select>
       </div>
@@ -263,22 +281,22 @@
       </div>
 
       <div class="form-group">
-        <label>Zugewiesenes Team:</label>
-        <div id="dev-staff-selection" class="staff-checkbox-list">
+        <span id="dev-staff-label" data-i18n="team_assignment_label" style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0;">Team-Zuweisung &amp; Mitarbeiter:</span>
+        <div id="dev-staff-selection" class="staff-checkbox-list" role="group" aria-labelledby="dev-staff-label">
           <!-- Dynamisch -->
         </div>
       </div>
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <label for="slider-gameplay">Fokus: Gameplay &amp; Mechanik (<span id="val-gameplay">50%</span>):</label>
-          <button type="button" class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.74rem;" onclick="applyIdealGenreSliders(true)">✨ Ideale Genre-Slider</button>
+          <label for="slider-gameplay"><span data-i18n="focus_gameplay_prefix">Fokus: Gameplay &amp; Mechanik</span> (<span id="val-gameplay">50%</span>):</label>
+          <button type="button" class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.74rem;" onclick="applyIdealGenreSliders(true)" data-i18n="ideal_sliders_btn">Ideale Genre-Slider</button>
         </div>
         <input type="range" id="slider-gameplay" min="0" max="100" value="50" oninput="document.getElementById('val-gameplay').textContent = this.value + '%'">
       </div>
 
       <div class="form-group">
-        <label for="slider-sound" data-i18n="focus_sound_label">Fokus: Audio &amp; Klangkulisse (<span id="val-sound">70%</span>):</label>
+        <label for="slider-sound"><span data-i18n="focus_sound_prefix">Fokus: Audio &amp; Klangkulisse</span> (<span id="val-sound">70%</span>):</label>
         <input type="range" id="slider-sound" min="20" max="100" value="70" oninput="document.getElementById('val-sound').textContent = this.value + '%'">
       </div>
 
@@ -294,7 +312,7 @@
     <div class="modal-card">
       <h2 id="contracts-title" data-i18n="contracts_modal_title">📋 Auftragsarbeiten &amp; Tonstudio-Jobs</h2>
       <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;" data-i18n="contracts_modal_desc">Produziere Radio-Jingles, Hörspiel-Geräuschkulissen und Masterings für sichere Einnahmen und Forschungspunkte.</p>
-      <div id="contracts-list" class="staff-list">
+      <div id="contracts-list" class="staff-list" aria-live="polite">
         <!-- Dynamisch -->
       </div>
       <button type="button" class="btn btn-secondary" onclick="closeContractsModal()" style="margin-top: 12px;" data-i18n="close">Schließen</button>
@@ -306,7 +324,7 @@
     <div class="modal-card">
       <h2 id="research-title" data-i18n="research_modal_title">🔬 Forschung &amp; Audio-Technologie</h2>
       <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;" data-i18n="research_modal_desc">Erforsche revolutionäre Sound-Technologien, um Wertungen zu maximieren und neue Engines zu bauen.</p>
-      <div id="research-items-list" class="research-list">
+      <div id="research-items-list" class="research-list" aria-live="polite">
         <!-- Dynamisch -->
       </div>
       <button type="button" class="btn btn-secondary" onclick="closeResearchModal()" style="margin-top: 12px;" data-i18n="close">Schließen</button>
@@ -316,13 +334,13 @@
   <!-- MODAL: ENGINE WERKSTATT -->
   <div id="modal-engine" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="engine-title" style="display: none;">
     <div class="modal-card">
-      <h2 id="engine-title">⚙️ Sound-Engine Werkstatt</h2>
+      <h2 id="engine-title" data-i18n="engine_modal_title">Engine-Werkstatt</h2>
       <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;" data-i18n="engine_modal_desc">Baue moderne proprietäre Sound-Engines, die all deine erforschten Audio-Features bündeln.</p>
-      <div id="engine-list-display">
+      <div id="engine-list-display" aria-live="polite">
         <!-- Dynamisch -->
       </div>
       <div class="modal-actions" style="margin-top: 12px;">
-        <button type="button" class="btn btn-primary" onclick="buildNewEngine()">Neue Engine entwickeln (-15.000 €)</button>
+        <button type="button" class="btn btn-primary" onclick="buildNewEngine()" data-i18n="build_engine_btn">Neue Engine entwickeln (-15.000 €)</button>
         <button type="button" class="btn btn-secondary" onclick="closeEngineModal()" data-i18n="close">Schließen</button>
       </div>
     </div>
@@ -333,11 +351,11 @@
     <div class="modal-card">
       <h2 id="staff-title" data-i18n="staff_modal_title">👥 Personalmanagement &amp; Erholung</h2>
       <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;" data-i18n="staff_modal_desc">Erschöpfte Mitarbeiter machen Fehler. Schicke gestresste Entwickler in den Urlaub!</p>
-      <div id="current-staff-list" class="staff-list">
+      <div id="current-staff-list" class="staff-list" aria-live="polite">
         <!-- Dynamisch -->
       </div>
       <div style="margin-top: 16px; border-top: 1px solid var(--card-border); padding-top: 12px;">
-        <h3 style="font-size: 1rem; margin-bottom: 8px;">Kandidaten anheuern:</h3>
+        <h3 style="font-size: 1rem; margin-bottom: 8px;" data-i18n="hire_staff_title">Kandidaten anheuern:</h3>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn btn-primary" style="flex: 1;" onclick="hireNewCandidate('sound')">+ Audio-Designer</button>
           <button type="button" class="btn btn-primary" style="flex: 1;" onclick="hireNewCandidate('coder')">+ Programmierer</button>
@@ -351,7 +369,7 @@
   <!-- MODAL: MARKETING & HYPE -->
   <div id="modal-marketing" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="marketing-title" style="display: none;">
     <div class="modal-card">
-      <h2 id="marketing-title">📢 Marketing &amp; Kampagnen</h2>
+      <h2 id="marketing-title" data-i18n="marketing_modal_title">Marketing &amp; Kampagnen</h2>
       <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;" data-i18n="marketing_modal_desc">Erhöhe den Hype vor dem Launch, um Verkaufserlöse und Fan-Zahlen drastisch zu steigern!</p>
       <div class="soundcon-options">
         <button type="button" class="card btn-booth" onclick="startMarketingCampaign('flyer')">
@@ -381,11 +399,11 @@
       <p data-i18n="soundcon_modal_desc">Präsentiere dein Studio vor tausenden Audio-Gamer-Fans und Vertretern der Fachpresse!</p>
       <div class="soundcon-options">
         <button type="button" class="card btn-booth" onclick="attendSoundCon('small')">
-          <strong>Kleiner Stand</strong>
+          <strong data-i18n="soundcon_small">Kleiner Stand</strong>
           <span>Kosten: 2.500 € • +250 Fans</span>
         </button>
         <button type="button" class="card btn-booth" onclick="attendSoundCon('medium')">
-          <strong>Mittlerer Stand mit Soundbar</strong>
+          <strong data-i18n="soundcon_medium">Mittlerer Stand mit Soundbar</strong>
           <span>Kosten: 8.500 € • +1.200 Fans</span>
         </button>
         <button type="button" class="card btn-booth" onclick="attendSoundCon('keynote')">
@@ -400,9 +418,9 @@
   <!-- MODAL: SOUNDTRACK LABEL -->
   <div id="modal-label" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="label-title" style="display: none;">
     <div class="modal-card">
-      <h2 id="label-title">💿 Dein Soundtrack-Label</h2>
+      <h2 id="label-title" data-i18n="label_modal_title">Dein Soundtrack-Label</h2>
       <p data-i18n="label_modal_desc">Veröffentliche Soundtracks deiner Top-Spiele auf Vinyl, Kassette und Streaming-Plattformen für wöchentliche Tantiemen!</p>
-      <div id="label-releases-list" class="label-list">
+      <div id="label-releases-list" class="label-list" aria-live="polite">
         <!-- Dynamisch -->
       </div>
       <button type="button" class="btn btn-secondary" onclick="closeLabelModal()" data-i18n="close">Schließen</button>
@@ -414,7 +432,7 @@
     <div class="modal-card">
       <h2 id="bank-title" data-i18n="bank_modal_title">🏦 Bank &amp; Kreditfinanzierung</h2>
       <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;" data-i18n="bank_modal_desc">Kredite sichern dir Liquidität für Großproduktionen. Tilge Schulden rechtzeitig, um Zinskosten zu senken.</p>
-      <div id="bank-debt-info">
+      <div id="bank-debt-info" aria-live="polite">
         <!-- Dynamisch -->
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -437,8 +455,8 @@
   <!-- MODAL: FEEDBACK -->
   <div id="modal-feedback" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedback-title" style="display: none;">
     <div class="modal-card">
-      <h2 id="feedback-title">💬 Feedback & Ideen senden</h2>
-      <p style="font-size: 0.9rem; color: #a0aec0; margin: 0;">Dein Feedback landet direkt bei Entwickler Lauju in der Feedback-Zentrale.</p>
+      <h2 id="feedback-title" data-i18n="feedback_modal_title">Feedback &amp; Ideen senden</h2>
+      <p style="font-size: 0.9rem; color: #a0aec0; margin: 0;" data-i18n="feedback_modal_desc">Dein Feedback landet direkt bei Entwickler Lauju in der Feedback-Zentrale.</p>
       
       <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
         <label for="fb-sender" data-i18n="feedback_name_label">Dein Name / Alias (optional):</label>
@@ -446,7 +464,7 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
-        <label for="fb-text">Deine Nachricht / Fehlerbericht / Feature-Wunsch:</label>
+        <label for="fb-text" data-i18n="feedback_msg_label">Deine Nachricht / Fehlerbericht / Feature-Wunsch:</label>
         <textarea id="fb-text" rows="4" style="padding: 10px; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; resize: vertical; font-family: inherit;" placeholder="Was gefällt dir? Was sollen wir als Nächstes einbauen?" data-i18n-placeholder="feedback_msg_placeholder"></textarea>
       </div>
 
@@ -463,12 +481,12 @@
     <div class="modal-card" style="border-color: var(--accent); background: #0f172a;">
       <h2 id="game-over-title" style="color: var(--accent);" data-i18n="game_end_title">🏆 Historische Ära Vollendet (1930–2026)!</h2>
       <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 6px;" data-i18n="game_end_body">Du hast die gesamte 96-jährige Entwicklung der Games-Branche vom Hand-Abakus bis zu Neural-Interfaces gemeistert!</p>
-      <div id="game-over-stats">
+      <div id="game-over-stats" aria-live="polite">
         <!-- Dynamisch -->
       </div>
       <div class="modal-actions" style="margin-top: 16px;">
-        <button type="button" class="btn btn-primary" onclick="continueEndlessMode()">🚀 Endlos-Modus fortsetzen</button>
-        <button type="button" class="btn btn-secondary" onclick="resetGame()" style="color: var(--red);">🔄 Neues Spiel starten</button>
+        <button type="button" class="btn btn-primary" onclick="continueEndlessMode()" data-i18n="continue_endless">Endlos-Modus fortsetzen</button>
+        <button type="button" class="btn btn-secondary" onclick="resetGame()" style="color: var(--red);" data-i18n="reset_game_title">Neues Spiel starten</button>
       </div>
     </div>
   </div>

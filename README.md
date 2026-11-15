@@ -24,24 +24,28 @@
   Start im Jahr **1930** in der *Hinterhof-Tonkabine (Garage)* mit `50.000 €` Startkapital, `150` Fans, `15` Forschungspunkten (FP) und **48 Wochen/Jahr**. Umfasst **51 historische Plattformen** mit laufenden Freischaltungen und Ausmusterungen (von *Hand-Abakus* und *Zuse Z1/Z3* bis zur Moderne), **97 jährliche historische Ereignisse**, **172 Themen** sowie ein dynamisches **Markttrend-Badge** im HUD.
 * **Zeitgestaffelte Feature-Unlocks (18 Features):**
   Meilensteine wie *Soundtrack-Label* (**1985**), *Merchandising* (**1990**), *SoundCon Messe* & *Abo-Modell* (**1995**), *Streaming-Plattform* (**2005**), *Content Creators Sponsern* (**2010**), *VR Hardware Labor* (**2016**) oder *KI-Tools* (**2020**) schalten sich historisch passend frei.
-* **Live-Synergie-Vorschau & Ideale Genre-Slider:**
-  Im Entwicklungs-Modal wird die **Thema-Genre-Synergie** in Echtzeit als Sterne-Bewertung (`0–3` bzw. `⚠️` bis `⭐⭐⭐`) angezeigt. Die Fokus-Slider (**Gameplay** & **Audio/Sound**) steuern den wöchentlichen Punktezuwachs und fließen direkt in die Endwertung ein — per Button **„✨ Ideale Genre-Slider“** lässt sich das Optimalprofil des gewählten Genres direkt übernehmen.
+* **Live-Synergie-Vorschau, Zielgruppen & Ideale Genre-Slider:**
+  Im Entwicklungs-Modal wird die kombinierte **Thema-, Genre- und Zielgruppen-Synergie** in Echtzeit als Sterne-Bewertung (`0–3` bzw. `⚠️` bis `⭐⭐⭐`) angezeigt. **3 Zielgruppen** (*Jeder*, *Jugendliche*, *Hardcore-Gamer*) beeinflussen Kritikerwertung (`+4` bzw. `-5`) und Verkaufsfaktor (`1,15x` / `1,0x` / `0,75x`). Die Fokus-Slider (**Gameplay** & **Audio/Sound**) steuern den wöchentlichen Punktezuwachs — per Button **„Ideale Genre-Slider“** lässt sich das Optimalprofil des gewählten Genres direkt übernehmen.
+* **Publisher-Verträge (5 Vertriebsmodelle):**
+  Neben dem *Eigenverlag (Indie)* stehen **4 Publisher** (*Aetherwelle Distribution*, *Polyphonie Verlag*, *Global Sonic Records*, *OmniMedia Megacorp*) zur Auswahl. Publisher zahlen einen sofortigen **Vorschuss** (kann knappe Studio-Budgets direkt retten), erhöhen die **Marktreichweite** (`1,25x` bis `2,15x`), behalten dafür eine **Umsatzbeteiligung** (`25%` bis `40%`) ein und verlangen eine **Mindestwertung** (`+300` Bonus-Fans bei Erfolg, `-100` Fans bei Verfehlen).
 * **Reihen & Fortsetzungen (Sequels):**
-  Bereits veröffentlichte Titel können fortgesetzt werden (`1,20x` Verkaufsfaktor). Wird eine Fortsetzung auf einer **neueren Custom-Engine** entwickelt, erhält sie `+6` Qualitätsbonus (statt `+2` bei gleicher Engine).
+  Bereits veröffentlichte Titel können fortgesetzt werden (`1,20x` Verkaufsfaktor). Wird eine Fortsetzung auf einer **neueren Custom-Engine** entwickelt, erhält sie `+6` Qualitätsbonus (statt `-4` Franchise-Ermüdung bei identischer Engine).
 * **Aktive Entwicklungs-Entscheidungen & QA-Feinschliff:**
   * **🔧 QA-Feinschliff & Mastering** (`1.200 €`, bis zu `3` Durchläufe pro Projekt): entfernt bis zu `4` Bugs und erhöht die Qualität um je `+3`.
   * **🎙️ Live-Akustik-Session** *(1× pro Projekt, `2.000 €`)*: liefert sofort `+25` Audio-Punkte, `+10` Feature-Punkte und `+5` Qualität.
-* **Auftragsarbeiten (`📋`):**
-  4 Tonstudio-Aufträge (*Radio-Jingle & Stationskennung*, *Hörspiel-Geräuschkulisse (Foley)*, *Frequenzweiche & Signal-Optimierung*, *Orchester- & Tonträger-Mastering*) mit ära-skalierten Vergütungen (`1,0x` vor 1970, `1,6x` 1970–1989, `2,5x` ab 1990) und `+2` FP bei fristgerechtem Abschluss (oder Vertragsstrafe bei Ablauf).
+* **Ära-gestaffelte Auftragsarbeiten (`📋`):**
+  **8 Tonstudio-Aufträge** — 4 Starter-Aufträge ab **1930** (*Radio-Jingle & Stationskennung*, *Hörspiel-Geräuschkulisse (Foley)*, *Frequenzweiche & Signal-Optimierung*, *Orchester- & Tonträger-Mastering*) sowie 4 historische Folgeaufträge (*Arcade-Soundchip* ab **1972**, *CD-Redbook Soundtrack* ab **1985**, *5.1 Surround-Kino-Abmischung* ab **2000**, *VR Binaural Spatial-Audio Suite* ab **2016**) mit ära-skalierten Vergütungen (`1,0x` vor 1970, `1,6x` 1970–1989, `2,5x` ab 1990) und `+2` FP bei fristgerechtem Abschluss (oder Vertragsstrafe bei Ablauf).
 * **Tonstudio-Ausbau & Personalentwicklung:**
   * **4 Studio-Ausbaustufen** (`+10` Prestige pro Stufe): *Hinterhof-Tonkabine (Garage)* (max. 4 Mitarbeiter), *Kleines Tonstudio* (`30.000 €`, max. 6, `+5%` Qualität), *Professionelles Funkhaus-Studio* (`90.000 €`, max. 8, `+12%` Qualität), *Internationaler Audio-Campus (HQ)* (`250.000 €`, max. 12, `+20%` Qualität).
-  * **Mitarbeiter-Schulung & Urlaub:** Schulungen (`2.500 €`) erhöhen den Skill um `+1` (bis Stufe 10); 4-wöchiger Erholungsurlaub senkt Müdigkeit und steigert Moral.
+  * **Mitarbeiter-Schulung & Urlaub:** Schulungen (`2.500 €`) erhöhen den Skill um `+1` (bis Stufe 10); 4-wöchiger Erholungsurlaub senkt Müdigkeit, steigert Moral und blockiert während der Urlaubszeit Schulungen.
 * **Post-Release-Lebenszyklus:**
-  * **📊 Spielbericht / Post-Mortem** *(1× pro Titel)*: analysiert die Thema-Genre-Synergie und idealen Genre-Slider des veröffentlichten Spiels und vergibt `+10` FP sowie `+200` Fans.
+  * **📊 Spielbericht / Post-Mortem** *(1× pro Titel)*: analysiert Thema-Genre-Synergie, **Zielgruppen-Passung** und ideale Genre-Slider des veröffentlichten Spiels und vergibt `+10` FP sowie `+200` Fans.
   * **🔧 Patch** (`1.500 €`, 1× pro Spiel): behebt verbliebene Bugs und bringt `+2.500 €` Umsatz, `+600` Verkäufe sowie `+150` Fans.
   * **💿 Addon / DLC** (max. `2` pro Spiel, je `4.000 €`): steigert Umsatz (`+30%`, min. `6.000 €`), Verkäufe (`+25%`, min. `1.200`), Fans (`+250`) und FP (`+5`).
-* **Forschung, Soundtrack-Label, SoundCon, Bank & GOTY:**
-  7 zeitgestaffelte Technologien im Forschungslabor (finanziert durch FP), automatische Tonträger-Releases über das Soundtrack-Label ab 1985, jährliche GOTY-Verleihungen und Bankkredite (`0,5%` Wochenzins).
+* **Forschung (1930–2024), Engine-Lizenzierung, Soundtrack-Label, SoundCon, Bank & Awards:**
+  * **14 zeitgestaffelte Technologien** im Forschungslabor (`1930–2024`) — lückenlos von *Schalldämmung & Studio-Kabinen* (1930), *Magnetband-Aufnahme* (1938), *Vinyl-Schneidemaschine & Hi-Fi Mastering* (1948), *Stereo-Panorama-Mischpult* (1958), *Analoger Modular-Synthesizer* (1968) und *PCM Digital-Audio Sampling* (1975) bis zu *KI-Prozeduraler Soundtrack-Engine* (2015), *Echtzeit-Acoustic Raytracing* (2020) und *Neuronaler Echtzeit-Akustik* (2024).
+  * **Engine-Drittlizenzierung:** Eigene Sound-Engines (mit ära-passenden Namen und Baujahr) können an Fremdstudios lizenziert werden und liefern wöchentliche Lizenzeinnahmen (`350 × Tech-Bonus` pro Woche), inklusive wöchentlicher Cashflow-Übersicht in der Bank (`0,5%` Wochenzins).
+  * **Jährliche Preisverleihungen & Soundtrack-Label:** Automatische Tonträger-Releases ab 1985 (verstärkt durch *Vinyl-Mastering* `+15%` & *KI-Soundtrack-Engine* `+35%`), jährliche **GOTY-Verleihungen** (`score >= 85`) sowie das **Goldene Mikrofon (Bestes Audio-Design)** für audiofokussierte Titel (`score >= 75` & `audioPts >= 80`, `+15.000 €`, `+800` Fans).
 
 ---
 
@@ -50,8 +54,8 @@
 Dieses Projekt basiert auf **Capacitor Android** (Web-Frontend in Vanilla JS, HTML5, CSS3, Web Audio API) ergänzt um eine optionale/native Rust-Kernbibliothek via JNI:
 * `www/`: Webanwendung (`index.html`, `audio_engine.js`, `js/game_data.js`, `js/models.js`, `js/systems/*.js`, `js/ui/*.js`, Styles & Assets)
 * `android/`: Natives Android-Projekt (Gradle, Capacitor Plugins, Ressourcen)
-* `rust-core/`: Rust-Bibliothek (`lauju_app_core` v2.0.0) mit JNI-Funktionen für `de.lauri.audiostudiotycoon` (`sha256Hex`, `verifyIntegrity`, `sanitizeInput`)
-* `test_simulation.js`: Automatisierte Simulations- und Barrierefreiheits-Testsuite (Node.js)
+* `rust-core/`: Rust-Bibliothek (`lauju_app_core` v2.0.0) mit JNI-Funktionen für `de.lauri.audiostudiotycoon` (`sha256Hex`, `verifyIntegrity`, `sanitizeInput`, 2 Unit-Tests)
+* `test_simulation.js`: Automatisierte Simulations-, Lokalisierungs- (274 DE/EN-Keys) und Barrierefreiheits-Testsuite (Node.js, **43 Testsuiten**)
 * `fastlane/metadata/android/`: Metadaten und Grafiken für F-Droid und App-Stores
 * `fdroid/`: F-Droid Metadaten-Rezept (`de.lauri.audiostudiotycoon.yml`)
 

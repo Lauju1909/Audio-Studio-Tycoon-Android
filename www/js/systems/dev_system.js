@@ -18,22 +18,94 @@ function generateRandomTitle() {
   return picked;
 }
 
+const RESEARCH_EFFECT_FALLBACKS = {
+  acoustic_isolation: { flatAudio: 10 },
+  magnetic_tape: { audioPct: 15, bugReduction: 0.10 },
+  vinyl_mastering: { labelRoyaltyPct: 15, flatAudio: 10 },
+  stereo_panning: { audioPct: 15 },
+  moog_modular: { scorePct: 10 },
+  pcm_digital: { flatAudio: 15, bugReduction: 0.15 },
+  chiptune: { audioPct: 20, themes: ['Retro', 'Cyberpunk'] },
+  polyphonic: { flatAudio: 15 },
+  dsp_effects: { audioPct: 20, bugReduction: 0.20 },
+  surround_51: { scorePct: 15, genres: ['Action', 'Horror'] },
+  binaural_3d: { audioPct: 30, fanMultiplier: 1.5 },
+  ai_composition: { speedBoost: 0.25, labelRoyaltyPct: 35 },
+  raytracing_audio: { flatScore: 25 },
+  neural_acoustics: { flatScore: 30, audioPct: 35 }
+};
+
+function getGlobalValue(name, fallback) {
+  if (typeof window !== 'undefined' && window[name] !== undefined) return window[name];
+  if (typeof global !== 'undefined' && global[name] !== undefined) return global[name];
+  return fallback;
+}
+
+function getUnlockedResearchEntries() {
+  const unlockedIds = Array.isArray(StudioState && StudioState.unlockedTech) ? StudioState.unlockedTech : [];
+  const catalog = (typeof RESEARCH_CATALOG !== 'undefined' && Array.isArray(RESEARCH_CATALOG))
+    ? RESEARCH_CATALOG
+    : getGlobalValue('RESEARCH_CATALOG', []);
+  return unlockedIds.map(id => {
+    const entry = catalog.find(item => item.id === id);
+    if (entry && entry.effect) return { id, effect: entry.effect };
+    if (RESEARCH_EFFECT_FALLBACKS[id]) return { id, effect: RESEARCH_EFFECT_FALLBACKS[id] };
+    return null;
+  }).filter(Boolean);
+}
+
+function doesTechEffectMatchProject(effect, project) {
+  if (!effect) return false;
+  if (Array.isArray(effect.themes) && !effect.themes.includes(project.theme)) {
+    return false;
+  }
+  if (Array.isArray(effect.genres)) {
+    return effect.genres.includes(project.genre) || effect.genres.includes(project.theme);
+  }
+  return true;
+}
+
+function resolvePublisher(publisherId) {
+  const pubCatalog = (typeof PUBLISHERS_CATALOG !== 'undefined' && Array.isArray(PUBLISHERS_CATALOG))
+    ? PUBLISHERS_CATALOG
+    : getGlobalValue('PUBLISHERS_CATALOG', []);
+  const fallbackSelf = { id: 'self_pub', name: 'Eigenverlag (Indie)', name_en: 'Self-Published (Indie)', advance: 0, royaltyCut: 0, reachMulti: 1.0, minScore: 0 };
+  const selfPub = pubCatalog.find(pub => pub.id === 'self_pub') || fallbackSelf;
+  if (!publisherId) return selfPub;
+  return pubCatalog.find(pub => pub.id === publisherId) || selfPub;
+}
+
 function startDevelopment() {
   const platformSelect = document.getElementById('select-platform');
   const availablePlats = (typeof getAvailablePlatforms === 'function') ? getAvailablePlatforms(StudioState.year) : (typeof PLATFORMS !== 'undefined' ? PLATFORMS : []);
   const selectedPlatName = (platformSelect && platformSelect.value) ? platformSelect.value : (availablePlats[0] ? availablePlats[0].name : "Hand-Abakus");
   const platform = (typeof PLATFORMS !== 'undefined' ? PLATFORMS.find(p => p.name === selectedPlatName) : null) || availablePlats[0] || { name: selectedPlatName, license_fee: 0, market_multi: 1.0 };
 
+  const audienceSelect = document.getElementById('select-audience');
+  const rawAudience = (audienceSelect && audienceSelect.value) ? String(audienceSelect.value).trim() : '';
+  const audCatalog = (typeof AUDIENCE_CATALOG !== 'undefined' && Array.isArray(AUDIENCE_CATALOG))
+    ? AUDIENCE_CATALOG
+    : getGlobalValue('AUDIENCE_CATALOG', []);
+  const audience = (rawAudience && (audCatalog.length === 0 || audCatalog.some(a => a.id === rawAudience)))
+    ? rawAudience
+    : 'everyone';
+
+  const publisherSelect = document.getElementById('select-publisher');
+  const rawPubId = (publisherSelect && publisherSelect.value) ? String(publisherSelect.value).trim() : '';
+  const publisher = resolvePublisher(rawPubId || 'self_pub');
+  const pubAdvance = Number(publisher.advance) || 0;
+
   const licenseFee = platform.license_fee || 0;
   const baseCost = Math.round(5000 * (StudioState.devCostMultiplier || 1.0));
   const totalCost = baseCost + licenseFee;
+  const netCost = Math.max(0, totalCost - pubAdvance);
 
-  if (StudioState.cash < totalCost) {
+  if (StudioState.cash < netCost) {
     if (typeof AudioEngine !== 'undefined') {
       AudioEngine.playSound('error');
-      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(totalCost) }));
+      AudioEngine.speak(t('not_enough_money', { cost: formatMoney(netCost) }));
     }
-    return;
+    return false;
   }
 
   const nameInput = document.getElementById('input-game-name');
@@ -80,7 +152,7 @@ function startDevelopment() {
     assignedStaffIds.push(StudioState.staff[0].id);
   }
 
-  StudioState.cash -= totalCost;
+  StudioState.cash = StudioState.cash - totalCost + pubAdvance;
   if (typeof closeDevModal === 'function') closeDevModal();
 
   const rawInputVal = (nameInput && nameInput.value ? nameInput.value.trim() : '');
@@ -91,6 +163,8 @@ function startDevelopment() {
 
   StudioState.activeProject = {
     title: finalTitle, theme, genre, engineId, gameplay, sound,
+    audience,
+    publisherId: publisher.id,
     platform: platform.name,
     platformMarketMulti: platform.market_multi,
     assignedStaffIds,
@@ -121,6 +195,7 @@ function startDevelopment() {
     AudioEngine.speak(t('dev_started', { title: finalTitle, theme, genre, platform: platform.name }));
   }
   if (typeof updateHUD === 'function') updateHUD();
+  return true;
 }
 
 function tickProjectProgress() {
@@ -131,14 +206,24 @@ function tickProjectProgress() {
   const engineAudioBonus = engine ? engine.audioBonus : 5;
   const engineTechBonus = engine ? engine.techBonus : 5;
 
-  const hasChiptune = StudioState.unlockedTech.includes('chiptune');
-  const hasPolyphonic = StudioState.unlockedTech.includes('polyphonic');
-  const hasDSP = StudioState.unlockedTech.includes('dsp_effects');
-  const has3D = StudioState.unlockedTech.includes('binaural_3d');
-  const hasAI = StudioState.unlockedTech.includes('ai_composition');
+  const activeTechs = getUnlockedResearchEntries();
+  let totalSpeedBoost = 0;
+  let totalFlatAudio = 0;
+  let totalAudioPct = 0;
+  let bugChanceMultiplier = 1.0;
+
+  activeTechs.forEach(({ effect }) => {
+    if (!doesTechEffectMatchProject(effect, p)) return;
+    if (effect.speedBoost) totalSpeedBoost += effect.speedBoost;
+    if (effect.flatAudio) totalFlatAudio += Math.max(2, Math.round(effect.flatAudio / 4));
+    if (effect.audioPct) totalAudioPct += effect.audioPct;
+    if (effect.bugReduction) bugChanceMultiplier *= Math.max(0.1, 1 - effect.bugReduction);
+  });
 
   let progressStep = 10;
-  if (hasAI) progressStep += 4;
+  if (totalSpeedBoost > 0) {
+    progressStep += Math.round(16 * totalSpeedBoost);
+  }
 
   let coderSkill = 0;
   let soundSkill = 0;
@@ -166,14 +251,13 @@ function tickProjectProgress() {
 
   let soundGained = Math.floor(Math.random() * 4) + 2 + Math.round(soundSkill * 3) + Math.round(engineAudioBonus / 2);
   soundGained = Math.max(1, Math.round(soundGained * sndFocus));
-  if (hasPolyphonic) soundGained += 2;
-  if (hasDSP) soundGained = Math.round(soundGained * 1.2);
-  if (has3D) soundGained = Math.round(soundGained * 1.3);
-  if (hasChiptune && (p.theme === 'Retro' || p.theme === 'Cyberpunk')) soundGained = Math.round(soundGained * 1.25);
+  soundGained += totalFlatAudio;
+  if (totalAudioPct > 0) {
+    soundGained = Math.round(soundGained * (1 + totalAudioPct / 100));
+  }
   p.audioPts += soundGained;
 
-  let bugChance = 0.35;
-  if (hasDSP) bugChance *= 0.8;
+  let bugChance = 0.35 * bugChanceMultiplier;
   const avgFatigue = p.assignedStaffIds.length > 0 ?
     p.assignedStaffIds.map(id => StudioState.staff.find(e => e.id === id)?.fatigue || 0).reduce((a, b) => a + b, 0) / p.assignedStaffIds.length : 0;
 
@@ -351,14 +435,38 @@ function finishDevelopment() {
     if (off && off.qualityBonus) baseScore += Math.round(off.qualityBonus * 40);
   }
 
+  let totalScorePct = 0;
+  let totalFlatScore = 0;
+  let totalFanMulti = 1.0;
+
+  getUnlockedResearchEntries().forEach(({ effect }) => {
+    if (!doesTechEffectMatchProject(effect, p)) return;
+    if (effect.scorePct) totalScorePct += effect.scorePct;
+    if (effect.flatScore) totalFlatScore += Math.floor(effect.flatScore / 2);
+    if (effect.fanMultiplier) totalFanMulti *= effect.fanMultiplier;
+  });
+
   const qualityMulti = StudioState.qualityStandardMulti || 1.0;
   let finalScore = Math.round(baseScore * synergyMult * qualityMulti);
 
-  if (StudioState.unlockedTech.includes('surround_51') && (p.genre === 'Action' || p.theme === 'Horror')) {
-    finalScore += 8;
+  if (totalScorePct > 0) {
+    finalScore = Math.round(finalScore * (1 + totalScorePct / 100));
   }
-  if (StudioState.unlockedTech.includes('raytracing_audio')) {
-    finalScore += 12;
+  finalScore += totalFlatScore;
+
+  // Target Audience compatibility evaluation
+  const audienceId = p.audience || 'everyone';
+  const audCompatFn = (typeof getAudienceCompatibility === 'function')
+    ? getAudienceCompatibility
+    : getGlobalValue('getAudienceCompatibility', null);
+  const audienceFit = (typeof audCompatFn === 'function') ? audCompatFn(p.theme, p.genre, audienceId) : 2;
+  let audienceSalesMulti = 1.0;
+  if (audienceFit === 3) {
+    finalScore += 4;
+    audienceSalesMulti = 1.15;
+  } else if (audienceFit === 1) {
+    finalScore -= 5;
+    audienceSalesMulti = 0.75;
   }
 
   finalScore = Math.min(99, Math.max(45, finalScore + Math.floor(Math.random() * 7) - 3));
@@ -374,20 +482,37 @@ function finishDevelopment() {
   const platformMulti = platform.market_multi || 1.0;
   const salesMultiplier = StudioState.salesMultiplier || 1.0;
 
-  const baseSales = Math.round(finalScore * 400 * marketingMult * platformMulti * salesMultiplier * trendSalesBonus * sequelSalesMulti);
-  const fanBonus = Math.round(StudioState.fans * (finalScore / 100) * 1.5);
-  const earnedCash = Math.round((baseSales + fanBonus) * 2.2);
+  const publisher = resolvePublisher(p.publisherId || 'self_pub');
+  const pubReachMulti = Number(publisher.reachMulti) || 1.0;
+  const pubRoyaltyCut = Math.max(0, Math.min(100, Number(publisher.royaltyCut) || 0));
+  const pubMinScore = Number(publisher.minScore) || 0;
 
-  let earnedFans = Math.round(finalScore * 18 * marketingMult);
-  if (StudioState.unlockedTech.includes('binaural_3d')) {
-    earnedFans = Math.round(earnedFans * 1.5);
-  }
+  const baseSales = Math.round(finalScore * 400 * marketingMult * platformMulti * salesMultiplier * trendSalesBonus * sequelSalesMulti * audienceSalesMulti * pubReachMulti);
+  const fanBonus = Math.round(StudioState.fans * (finalScore / 100) * 1.5);
+  const totalSales = Math.max(0, Math.round(baseSales + fanBonus));
+  const grossCash = Math.round(totalSales * 2.2);
+  const royaltyCutCash = Math.round(grossCash * (pubRoyaltyCut / 100));
+  const earnedCash = Math.max(0, grossCash - royaltyCutCash);
+
+  let earnedFans = Math.round(finalScore * 18 * marketingMult * totalFanMulti);
 
   const earnedRP = Math.max(3, Math.round(finalScore / 9));
 
   StudioState.cash += earnedCash;
   StudioState.fans += earnedFans;
   StudioState.rp += earnedRP;
+
+  let publisherGoalMet = null;
+  if (pubMinScore > 0) {
+    if (finalScore >= pubMinScore) {
+      publisherGoalMet = true;
+      StudioState.fans += 300;
+      earnedFans += 300;
+    } else {
+      publisherGoalMet = false;
+      StudioState.fans = Math.max(0, StudioState.fans - 100);
+    }
+  }
 
   const stars = (typeof getCompatibilityStars === 'function') ? getCompatibilityStars(p.theme, p.genre) : 2;
   const finishedGame = {
@@ -400,6 +525,11 @@ function finishDevelopment() {
     platformMulti: platformMulti,
     gameplay: gpVal,
     sound: sndVal,
+    audioPts: p.audioPts || 0,
+    audience: audienceId,
+    audienceCompatibility: audienceFit,
+    publisherId: publisher.id,
+    publisherGoalMet: publisherGoalMet,
     bugs: p.bugs || 0,
     synergyStars: stars,
     sequelNumber: p.sequelNumber || 1,
@@ -408,7 +538,7 @@ function finishDevelopment() {
     patched: false,
     dlcCount: 0,
     score: finalScore,
-    sales: Math.round(baseSales + fanBonus),
+    sales: totalSales,
     revenue: earnedCash,
     week: StudioState.week,
     year: StudioState.year
@@ -472,9 +602,29 @@ function analyzePostMortem(gameId) {
   StudioState.rp += 10;
   StudioState.fans += 200;
 
+  let audienceFeedback = '';
+  const audCompatFn = (typeof getAudienceCompatibility === 'function')
+    ? getAudienceCompatibility
+    : getGlobalValue('getAudienceCompatibility', null);
+  if (typeof audCompatFn === 'function') {
+    const audienceId = game.audience || 'everyone';
+    const audCatalog = (typeof AUDIENCE_CATALOG !== 'undefined' && Array.isArray(AUDIENCE_CATALOG))
+      ? AUDIENCE_CATALOG
+      : getGlobalValue('AUDIENCE_CATALOG', []);
+    const audSpec = audCatalog.find(a => a.id === audienceId);
+    const audLabel = audSpec ? (isEn ? audSpec.name_en : audSpec.name) : audienceId;
+    const audFit = audCompatFn(game.theme, game.genre, audienceId);
+    const fitLabel = isEn
+      ? (audFit === 3 ? 'Perfect fit' : (audFit === 1 ? 'Mismatch' : 'Neutral'))
+      : (audFit === 3 ? 'Perfekt' : (audFit === 1 ? 'Unpassend' : 'Neutral'));
+    audienceFeedback = isEn
+      ? ` Audience (${audLabel}): ${fitLabel} (${audFit}/3).`
+      : ` Zielgruppe (${audLabel}): ${fitLabel} (${audFit}/3).`;
+  }
+
   game.postMortemReport = isEn
-    ? `Post-Mortem "${game.title}": Synergy ${stars}/3 stars (${game.theme} + ${game.genre}). Ideal for ${game.genre}: Gameplay ${ideal.gameplay}%, Sound ${ideal.sound}%. Reward: +10 RP, +200 Fans!`
-    : `Spielbericht "${game.title}": Synergie ${stars}/3 Sterne (${game.theme} + ${game.genre}). Ideal für ${game.genre}: Gameplay ${ideal.gameplay}%, Sound ${ideal.sound}%. Belohnung: +10 FP, +200 Fans!`;
+    ? `Post-Mortem "${game.title}": Synergy ${stars}/3 stars (${game.theme} + ${game.genre}).${audienceFeedback} Ideal for ${game.genre}: Gameplay ${ideal.gameplay}%, Sound ${ideal.sound}%. Reward: +10 RP, +200 Fans!`
+    : `Spielbericht "${game.title}": Synergie ${stars}/3 Sterne (${game.theme} + ${game.genre}).${audienceFeedback} Ideal für ${game.genre}: Gameplay ${ideal.gameplay}%, Sound ${ideal.sound}%. Belohnung: +10 FP, +200 Fans!`;
 
   if (typeof AudioEngine !== 'undefined') {
     AudioEngine.playSound('success');
@@ -568,14 +718,26 @@ function releaseGameDLC(gameId) {
   return true;
 }
 
-if (typeof window !== 'undefined') {
-  window.generateRandomTitle = generateRandomTitle;
-  window.startDevelopment = startDevelopment;
-  window.tickProjectProgress = tickProjectProgress;
-  window.polishActiveProject = polishActiveProject;
-  window.boostActiveProjectAudio = boostActiveProjectAudio;
-  window.finishDevelopment = finishDevelopment;
-  window.analyzePostMortem = analyzePostMortem;
-  window.releaseGamePatch = releaseGamePatch;
-  window.releaseGameDLC = releaseGameDLC;
+[
+  typeof window !== 'undefined' ? window : null,
+  typeof global !== 'undefined' ? global : null
+].forEach(target => {
+  if (!target) return;
+  target.generateRandomTitle = generateRandomTitle;
+  target.startDevelopment = startDevelopment;
+  target.tickProjectProgress = tickProjectProgress;
+  target.polishActiveProject = polishActiveProject;
+  target.boostActiveProjectAudio = boostActiveProjectAudio;
+  target.finishDevelopment = finishDevelopment;
+  target.analyzePostMortem = analyzePostMortem;
+  target.releaseGamePatch = releaseGamePatch;
+  target.releaseGameDLC = releaseGameDLC;
+});
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    generateRandomTitle, startDevelopment, tickProjectProgress,
+    polishActiveProject, boostActiveProjectAudio, finishDevelopment,
+    analyzePostMortem, releaseGamePatch, releaseGameDLC
+  };
 }

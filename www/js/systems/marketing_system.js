@@ -3,16 +3,20 @@
  */
 
 function handleAnnualAwards() {
-  const pastYearGames = StudioState.releasedGames.filter(g => g.year === StudioState.year - 1);
+  const prevYear = StudioState.year - 1;
+  const pastYearGames = (StudioState.releasedGames || []).filter(g => g.year === prevYear);
   const bestGame = pastYearGames.reduce((max, g) => (g.score > (max ? max.score : 0) ? g : max), null);
 
+  let wonGoty = false;
   if (bestGame && bestGame.score >= 85) {
+    wonGoty = true;
     const prize = 50000;
     const fanBoost = 3000;
     StudioState.cash += prize;
     StudioState.fans += fanBoost;
+    StudioState.gotyAwards = StudioState.gotyAwards || [];
     StudioState.gotyAwards.push({
-      year: StudioState.year - 1,
+      year: prevYear,
       title: bestGame.title,
       score: bestGame.score
     });
@@ -24,6 +28,47 @@ function handleAnnualAwards() {
     }
     if (typeof EventBus !== 'undefined') {
       EventBus.emit('awards:goty', bestGame);
+    }
+  }
+
+  // Best Audio Design Award ("Goldenes Mikrofon")
+  StudioState.audioDesignAwards = StudioState.audioDesignAwards || [];
+  const audioCandidates = pastYearGames.filter(g => g.score >= 75 && (g.audioPts || 0) >= 80);
+  const bestAudioGame = audioCandidates.reduce((max, g) => {
+    if (!max) return g;
+    const maxPts = max.audioPts || 0;
+    const curPts = g.audioPts || 0;
+    if (curPts > maxPts) return g;
+    if (curPts === maxPts && (g.score || 0) > (max.score || 0)) return g;
+    return max;
+  }, null);
+
+  if (bestAudioGame) {
+    const audioPrize = 15000;
+    const audioFans = 800;
+    StudioState.cash += audioPrize;
+    StudioState.fans += audioFans;
+    StudioState.audioDesignAwards.push({
+      year: prevYear,
+      title: bestAudioGame.title,
+      score: bestAudioGame.score,
+      audioPts: bestAudioGame.audioPts || 0
+    });
+
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('success');
+      AudioEngine.vibrate([80, 40, 80]);
+      const isEn = StudioState.language === 'en';
+      const fallbackMsg = isEn
+        ? `AWARD! Your title '${bestAudioGame.title}' wins the Golden Microphone for Best Audio Design (${prevYear})! +15,000 € prize and +800 fans!`
+        : `AUSZEICHNUNG! Dein Spiel '${bestAudioGame.title}' gewinnt das Goldene Mikrofon für Bestes Audio-Design (${prevYear})! +15.000 € Preisgeld und +800 Fans!`;
+      const msg = (typeof t === 'function' && t('audio_award_winner', { title: bestAudioGame.title, year: prevYear }) !== 'audio_award_winner')
+        ? t('audio_award_winner', { title: bestAudioGame.title, year: prevYear })
+        : fallbackMsg;
+      AudioEngine.speak(msg, !wonGoty);
+    }
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('awards:audio', bestAudioGame);
     }
   }
 }

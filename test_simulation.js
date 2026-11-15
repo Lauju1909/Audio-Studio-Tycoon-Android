@@ -5,21 +5,27 @@ const fs = require('fs');
 global.window = global;
 const mockElements = {};
 function createMockElement(tag = 'div', id = '') {
+  let _innerHTML = '';
   return {
     id,
     tagName: tag.toUpperCase(),
     style: {},
     textContent: '',
     value: '',
-    innerHTML: '',
+    get innerHTML() { return _innerHTML; },
+    set innerHTML(val) {
+      _innerHTML = String(val);
+      this.children.length = 0;
+    },
     children: [],
+    _attrs: {},
     appendChild(child) {
       this.children.push(child);
-      this.innerHTML += `<${child.tagName || 'DIV'} value="${child.value || ''}">${child.textContent || ''}</${child.tagName || 'DIV'}>`;
+      _innerHTML += `<${child.tagName || 'DIV'} value="${child.value || ''}">${child.textContent || ''}</${child.tagName || 'DIV'}>`;
     },
-    setAttribute() {},
-    removeAttribute() {},
-    getAttribute() { return null; },
+    setAttribute(k, v) { this._attrs[k] = String(v); },
+    removeAttribute(k) { delete this._attrs[k]; },
+    getAttribute(k) { return Object.prototype.hasOwnProperty.call(this._attrs, k) ? this._attrs[k] : null; },
     classList: {
       add() {},
       remove() {},
@@ -558,6 +564,543 @@ assert.ok(document.getElementById('btn-polish-dev').textContent.includes('Polish
 toggleLanguage(); // back to 'de'
 StudioState.activeProject = null;
 
-console.log("\nALL 32 SIMULATION, TYCOON LOOP & TIMELINE INTEGRATION TESTS PASSED 100%!");
+function resetTestState(year = 1930, lang = 'de') {
+  if (StudioState.timerInterval) {
+    clearInterval(StudioState.timerInterval);
+    StudioState.timerInterval = null;
+  }
+  Object.assign(StudioState, createDefaultState(year));
+  StudioState.year = year;
+  StudioState.language = lang;
+  StudioState.isPaused = true;
+}
+
+console.log("=== TEST 33: All 14 Research Technologies (1930-2024), Pre-1980 Availability & Sorted UI ===");
+resetTestState(1930, 'de');
+assert.strictEqual(RESEARCH_CATALOG.length, 14, "RESEARCH_CATALOG must contain exactly 14 technologies");
+const expectedTechYears = {
+  acoustic_isolation: 1930,
+  magnetic_tape: 1938,
+  vinyl_mastering: 1948,
+  stereo_panning: 1958,
+  moog_modular: 1968,
+  pcm_digital: 1975,
+  chiptune: 1980,
+  polyphonic: 1982,
+  dsp_effects: 1985,
+  surround_51: 1992,
+  binaural_3d: 2000,
+  ai_composition: 2015,
+  raytracing_audio: 2020,
+  neural_acoustics: 2024
+};
+Object.entries(expectedTechYears).forEach(([id, expectedYear]) => {
+  const entry = RESEARCH_CATALOG.find(item => item.id === id);
+  assert.ok(entry, `Missing research tech ${id}`);
+  assert.strictEqual(entry.year, expectedYear, `${id} must unlock in ${expectedYear}`);
+  assert.ok(entry.name && entry.name_en, `${id} must have DE and EN names`);
+  assert.ok(entry.desc && entry.desc_en, `${id} must have DE and EN descriptions`);
+});
+
+StudioState.rp = 1000;
+StudioState.year = 1930;
+assert.strictEqual(doResearch('acoustic_isolation'), true, "acoustic_isolation (1930) must be available in 1930");
+assert.strictEqual(doResearch('acoustic_isolation'), false, "Duplicate research of acoustic_isolation must fail");
+assert.strictEqual(doResearch('magnetic_tape'), false, "magnetic_tape (1938) must be locked in 1930");
+assert.strictEqual(StudioState.rp, 990, "Locked research must not spend RP");
+
+const pre1980Checks = [
+  ['magnetic_tape', 1938],
+  ['vinyl_mastering', 1948],
+  ['stereo_panning', 1958],
+  ['moog_modular', 1968],
+  ['pcm_digital', 1975]
+];
+pre1980Checks.forEach(([id, unlockYr]) => {
+  StudioState.year = unlockYr - 1;
+  assert.strictEqual(doResearch(id), false, `${id} must be blocked at ${unlockYr - 1}`);
+  StudioState.year = unlockYr;
+  assert.strictEqual(doResearch(id), true, `${id} must succeed at ${unlockYr}`);
+});
+
+StudioState.year = 2023;
+assert.strictEqual(doResearch('neural_acoustics'), false, "neural_acoustics (2024) must be blocked in 2023");
+StudioState.year = 2024;
+assert.strictEqual(doResearch('neural_acoustics'), true, "neural_acoustics (2024) must succeed in 2024");
+
+renderResearchList();
+const researchContainer = document.getElementById('research-items-list');
+assert.strictEqual(researchContainer.children.length, 14, "renderResearchList must render all 14 technologies");
+assert.ok(researchContainer.children[0].innerHTML.includes('1930'), "First rendered research item must be 1930");
+assert.ok(researchContainer.children[13].innerHTML.includes('2024'), "Last rendered research item must be 2024");
+
+console.log("=== TEST 34: Research Effects in Development & OST Label Royalties ===");
+const origRand34 = Math.random;
+try {
+  Math.random = () => 0.5;
+  // Compare baseline project vs. pre-1980 + modern audio tech effects
+  resetTestState(1978, 'de');
+  const baseProj = {
+    title: "Baseline Sound",
+    theme: "Fantasy",
+    genre: "Action",
+    engineId: "engine_basic_1",
+    platform: "Atari 2600",
+    platformMarketMulti: 7.0,
+    gameplay: 80,
+    sound: 75,
+    assignedStaffIds: [StudioState.staff[0].id],
+    progress: 0,
+    features: 0,
+    audioPts: 0,
+    bugs: 0
+  };
+  StudioState.activeProject = { ...baseProj };
+  tickProjectProgress();
+  const baseAudioAfter1Tick = StudioState.activeProject.audioPts;
+  const baseProgressAfter1Tick = StudioState.activeProject.progress;
+
+  resetTestState(2024, 'de');
+  StudioState.unlockedTech = ['acoustic_isolation', 'magnetic_tape', 'vinyl_mastering', 'stereo_panning', 'pcm_digital', 'ai_composition'];
+  StudioState.activeProject = { ...baseProj };
+  tickProjectProgress();
+  assert(StudioState.activeProject.audioPts > baseAudioAfter1Tick, "Pre-1980 flatAudio & audioPct techs must boost tick audioPts");
+  assert(StudioState.activeProject.progress > baseProgressAfter1Tick, "ai_composition speedBoost (0.25) must accelerate weekly progress");
+
+  // Verify bugReduction (magnetic_tape 0.10, pcm_digital 0.15, dsp_effects 0.20) & theme-scoped chiptune
+  Math.random = () => 0.3; // < 0.35 base bugChance, > 0.35 * 0.90 * 0.85 * 0.80 (0.2142)
+  resetTestState(1985, 'de');
+  StudioState.activeProject = { ...baseProj, theme: "Retro" };
+  tickProjectProgress();
+  const bugsWithoutTech = StudioState.activeProject.bugs;
+
+  resetTestState(1985, 'de');
+  StudioState.unlockedTech = ['magnetic_tape', 'pcm_digital', 'dsp_effects', 'chiptune'];
+  StudioState.activeProject = { ...baseProj, theme: "Retro" };
+  tickProjectProgress();
+  assert(bugsWithoutTech > 0, "With random=0.3 and no bugReduction tech, base bugChance (0.35) must trigger bugs");
+  assert.strictEqual(StudioState.activeProject.bugs, 0, "bugReduction techs must drop bugChance below 0.3");
+  const retroAudioWithChiptune = StudioState.activeProject.audioPts;
+
+  resetTestState(1985, 'de');
+  StudioState.unlockedTech = ['magnetic_tape', 'pcm_digital', 'dsp_effects', 'chiptune'];
+  StudioState.activeProject = { ...baseProj, theme: "Fantasy" };
+  tickProjectProgress();
+  assert(retroAudioWithChiptune > StudioState.activeProject.audioPts, "chiptune must boost Retro theme audioPts more than Fantasy");
+  Math.random = () => 0.5;
+
+  // Verify finishDevelopment score/fan boosts from moog_modular, surround_51 (genre Action), binaural_3d, raytracing_audio, neural_acoustics
+  const scoreTestProj = {
+    ...baseProj,
+    gameplay: 40,
+    sound: 40,
+    progress: 100,
+    features: 20,
+    audioPts: 30,
+    bugs: 3
+  };
+  resetTestState(2024, 'de');
+  StudioState.activeProject = { ...scoreTestProj };
+  finishDevelopment();
+  const noTechGame = StudioState.releasedGames[0];
+
+  resetTestState(2024, 'de');
+  StudioState.unlockedTech = ['moog_modular', 'surround_51', 'binaural_3d', 'raytracing_audio', 'neural_acoustics'];
+  StudioState.activeProject = { ...scoreTestProj };
+  const fansBeforeBinaural = StudioState.fans;
+  finishDevelopment();
+  const techBoostedGame = StudioState.releasedGames[0];
+  assert(noTechGame.score < 90, `Baseline score (${noTechGame.score}) should leave headroom below 99`);
+  assert(techBoostedGame.score > noTechGame.score, `moog_modular + surround_51 + raytracing_audio + neural_acoustics must raise score (${techBoostedGame.score} > ${noTechGame.score})`);
+  assert(StudioState.fans - fansBeforeBinaural > noTechGame.score * 18, "binaural_3d fanMultiplier (1.5x) must boost earned fans");
+} finally {
+  Math.random = origRand34;
+}
+
+// Verify OST labelRoyaltyPct (vinyl_mastering +15%, ai_composition +35%) in getLabelRoyaltyMultiplier & tickWeek
+resetTestState(1986, 'de');
+assert.strictEqual(getLabelRoyaltyMultiplier(), 1.0, "Base OST royalty multiplier without tech must be 1.0");
+StudioState.unlockedTech = ['vinyl_mastering'];
+assert.strictEqual(getLabelRoyaltyMultiplier(), 1.15, "vinyl_mastering must grant +15% OST royalties (1.15x)");
+StudioState.unlockedTech = ['vinyl_mastering', 'ai_composition'];
+assert.strictEqual(getLabelRoyaltyMultiplier(), 1.50, "vinyl_mastering + ai_composition must grant +50% OST royalties (1.50x)");
+
+StudioState.cash = 10000;
+StudioState.staff = []; // isolate OST payout without payroll noise
+StudioState.soundtrackLabel = [{ id: 99, title: "Test OST", revenuePerWeek: 1000, totalRevenue: 0 }];
+tickWeek();
+assert.strictEqual(StudioState.cash, 11500, "tickWeek must pay 1,500 EUR (1,000 * 1.50) OST royalty in 1986");
+assert.strictEqual(StudioState.soundtrackLabel[0].totalRevenue, 1500);
+
+console.log("=== TEST 35: Target Audience Compatibility & Review Score / Sales Impact ===");
+assert.strictEqual(AUDIENCE_CATALOG.length, 3, "AUDIENCE_CATALOG must define 3 target audiences");
+assert.strictEqual(getAudienceCompatibility('Horror', 'Action', 'hardcore'), 3, "Horror + Action + hardcore must be 3 (perfect)");
+assert.strictEqual(getAudienceCompatibility('Horror', 'Action', 'everyone'), 1, "Horror + Action + everyone must be 1 (mismatch)");
+assert.strictEqual(getAudienceCompatibility('Abakus', 'Puzzle', 'everyone'), 3, "Abakus + Puzzle + everyone must be 3 (perfect)");
+assert.strictEqual(getAudienceCompatibility('Abakus', 'Puzzle', 'youth'), 1, "Abakus + Puzzle + youth must be 1 (mismatch)");
+assert.strictEqual(getAudienceCompatibility('Cyberpunk', 'Action', 'youth'), 3, "Cyberpunk + Action + youth must be 3 (perfect)");
+assert.strictEqual(getAudienceCompatibility('Fantasy', 'Casual', 'hardcore'), 1, "Casual genre + hardcore must be 1 (mismatch)");
+assert.strictEqual(getAudienceCompatibility('Medieval', 'Simulation', 'youth'), 2, "Medieval + Simulation + youth must be 2 (neutral)");
+assert.strictEqual(getAudienceCompatibility('Fantasy', 'RPG', 'everyone'), 2, "Fantasy + RPG + everyone must be 2 (neutral)");
+
+const origRand35 = Math.random;
+try {
+  Math.random = () => 0.5;
+  resetTestState(1980, 'de');
+  StudioState.activeProject = {
+    title: "Dark Resonance",
+    theme: "Horror",
+    genre: "Action",
+    audience: "hardcore",
+    publisherId: "self_pub",
+    engineId: "engine_basic_1",
+    platform: "C64",
+    platformMarketMulti: 7.5,
+    gameplay: 50,
+    sound: 50,
+    assignedStaffIds: [1],
+    progress: 100,
+    features: 20,
+    audioPts: 30,
+    bugs: 2
+  };
+  finishDevelopment();
+  const hardcoreHorror = StudioState.releasedGames[0];
+  assert.strictEqual(analyzePostMortem(hardcoreHorror.id), true);
+  assert.ok(hardcoreHorror.postMortemReport.includes('Zielgruppe'), "Post-Mortem report in DE must include audience feedback");
+
+  resetTestState(1980, 'de');
+  StudioState.activeProject = {
+    title: "Family Horror",
+    theme: "Horror",
+    genre: "Action",
+    audience: "everyone",
+    publisherId: "self_pub",
+    engineId: "engine_basic_1",
+    platform: "C64",
+    platformMarketMulti: 7.5,
+    gameplay: 50,
+    sound: 50,
+    assignedStaffIds: [1],
+    progress: 100,
+    features: 20,
+    audioPts: 30,
+    bugs: 2
+  };
+  finishDevelopment();
+  const everyoneHorror = StudioState.releasedGames[0];
+
+  assert.strictEqual(hardcoreHorror.audienceCompatibility, 3);
+  assert.strictEqual(everyoneHorror.audienceCompatibility, 1);
+  assert.strictEqual(hardcoreHorror.score - everyoneHorror.score, 9, "Perfect fit (+4) vs mismatch (-5) must produce +9 score spread");
+  assert(hardcoreHorror.sales > everyoneHorror.sales * 1.4, "1.15x sales + higher score must clearly outsell 0.75x mismatch");
+} finally {
+  Math.random = origRand35;
+}
+
+console.log("=== TEST 36: Publisher Contracts (Advance Rescue, Reach, Royalty Cut & MinScore Bonus/Penalty) ===");
+assert.strictEqual(PUBLISHERS_CATALOG.length, 5, "PUBLISHERS_CATALOG must contain self_pub + 4 publishers");
+resetTestState(1930, 'de');
+StudioState.cash = 1000; // Not enough for 5000 base + 10000 Hand-Abakus license = 15000
+document.getElementById('select-platform').value = "Hand-Abakus";
+document.getElementById('select-audience').value = "everyone";
+document.getElementById('select-publisher').value = "self_pub";
+assert.strictEqual(startDevelopment(), false, "Self-published start with 1,000 EUR for 15,000 EUR cost must be rejected");
+assert.strictEqual(StudioState.cash, 1000);
+
+// Rescued by Polyphonie advance (22,000 EUR >= 15,000 EUR totalCost -> netCost = 0)
+document.getElementById('select-publisher').value = "polyphonie";
+assert.strictEqual(startDevelopment(), true, "Publisher advance (22,000 EUR) must rescue tight cash (1,000 EUR)");
+assert.strictEqual(StudioState.cash, 8000, "Cash must equal 1000 - 15000 + 22000 = 8000");
+assert.strictEqual(StudioState.activeProject.publisherId, "polyphonie");
+
+const origRand36 = Math.random;
+try {
+  Math.random = () => 0.5;
+  // Compare self_pub vs omnimedia (2.15x reach, 40% royaltyCut, minScore 85) when goal IS met
+  resetTestState(1980, 'de');
+  StudioState.unlockedTech = ['raytracing_audio', 'neural_acoustics']; // guarantee score >= 85
+  StudioState.activeProject = {
+    title: "Indie Baseline",
+    theme: "Fantasy",
+    genre: "RPG",
+    audience: "hardcore",
+    publisherId: "self_pub",
+    engineId: "engine_basic_1",
+    platform: "C64",
+    platformMarketMulti: 7.5,
+    gameplay: 55,
+    sound: 80,
+    assignedStaffIds: [1],
+    progress: 100,
+    features: 60,
+    audioPts: 140,
+    bugs: 0
+  };
+  finishDevelopment();
+  const selfGame = StudioState.releasedGames[0];
+
+  resetTestState(1980, 'de');
+  StudioState.unlockedTech = ['raytracing_audio', 'neural_acoustics'];
+  const fansBeforeOmniWin = StudioState.fans;
+  StudioState.activeProject = {
+    title: "Omni Hit",
+    theme: "Fantasy",
+    genre: "RPG",
+    audience: "hardcore",
+    publisherId: "omnimedia",
+    engineId: "engine_basic_1",
+    platform: "C64",
+    platformMarketMulti: 7.5,
+    gameplay: 55,
+    sound: 80,
+    assignedStaffIds: [1],
+    progress: 100,
+    features: 60,
+    audioPts: 140,
+    bugs: 0
+  };
+  finishDevelopment();
+  const omniWinGame = StudioState.releasedGames[0];
+  assert(omniWinGame.score >= 85, "Omni Hit must meet minScore 85");
+  assert.strictEqual(omniWinGame.publisherGoalMet, true, "Publisher minScore goal must be marked met");
+  assert(omniWinGame.sales > selfGame.sales * 2.0, "OmniMedia 2.15x reachMulti must more than double sales");
+  const expectedOmniNet = Math.round(omniWinGame.sales * 2.2) - Math.round(Math.round(omniWinGame.sales * 2.2) * 0.40);
+  assert.strictEqual(omniWinGame.revenue, expectedOmniNet, "OmniMedia 40% royaltyCut must be deducted from gross revenue");
+  assert.strictEqual(StudioState.fans, fansBeforeOmniWin + Math.round(omniWinGame.score * 18) + 300, "Meeting publisher minScore must grant +300 bonus fans");
+
+  // Case where minScore (85) is MISSED -> -100 fan penalty
+  resetTestState(1980, 'de');
+  StudioState.fans = 500;
+  StudioState.activeProject = {
+    title: "Omni Flop",
+    theme: "Horror",
+    genre: "Casual",
+    audience: "everyone",
+    publisherId: "omnimedia",
+    engineId: "engine_basic_1",
+    platform: "C64",
+    platformMarketMulti: 7.5,
+    gameplay: 0,
+    sound: 20,
+    assignedStaffIds: [1],
+    progress: 100,
+    features: 5,
+    audioPts: 10,
+    bugs: 12
+  };
+  finishDevelopment();
+  const omniFlopGame = StudioState.releasedGames[0];
+  assert(omniFlopGame.score < 85, "Buggy mismatched project must fall below minScore 85");
+  assert.strictEqual(omniFlopGame.publisherGoalMet, false, "Missed publisher minScore must mark publisherGoalMet false");
+  assert.strictEqual(StudioState.fans, 500 + Math.round(omniFlopGame.score * 18) - 100, "Missing publisher minScore must deduct 100 fans");
+} finally {
+  Math.random = origRand36;
+}
+document.getElementById('select-publisher').value = "self_pub";
+document.getElementById('select-audience').value = "everyone";
+
+console.log("=== TEST 37: Custom Engine Third-Party Licensing & Passive Weekly Royalties ===");
+resetTestState(1985, 'de');
+StudioState.cash = 100000;
+StudioState.staff = [];
+global.prompt = (_msg, defVal) => defVal; // Use era default engine name
+buildNewEngine();
+const builtEng = StudioState.customEngines[StudioState.customEngines.length - 1];
+assert.ok(builtEng.name.includes('Chiptune-Synth Engine'), "1985 engine default name must match Chiptune-Synth era");
+assert.strictEqual(builtEng.createdYear, 1985);
+assert.strictEqual(builtEng.licensedOut, false);
+assert.strictEqual(builtEng.totalRoyalties, 0);
+
+assert.strictEqual(toggleEngineLicense('nonexistent_engine'), false, "Unknown engine ID must return false");
+assert.strictEqual(toggleEngineLicense(builtEng.id), true, "Toggling engine license ON must return true");
+assert.strictEqual(builtEng.licensedOut, true);
+
+const expectedWeeklyFee = 350 * builtEng.techBonus;
+const cashBeforeLicenseTick = StudioState.cash;
+tickWeek();
+assert.strictEqual(builtEng.totalRoyalties, expectedWeeklyFee, "tickWeek must accumulate weekly engine royalties");
+assert.strictEqual(StudioState.cash, cashBeforeLicenseTick + expectedWeeklyFee, "tickWeek must credit engine royalties to cash");
+
+renderEngineList();
+const engineListEl = document.getElementById('engine-list-display');
+const licensedCardHtml = engineListEl.children.map(c => c.innerHTML).join('\n');
+assert.ok(licensedCardHtml.includes('1985'), "Engine list must display built year 1985");
+assert.ok(licensedCardHtml.includes('Lizenziert'), "Engine list must display Lizenziert badge when licensedOut is true");
+
+updateBankModalUI();
+const bankHtml = document.getElementById('bank-debt-info').innerHTML;
+assert.ok(bankHtml.includes('bank-weekly-flow'), "Bank modal must include weekly financial flow summary");
+
+assert.strictEqual(toggleEngineLicense(builtEng.id), false, "Toggling engine license OFF must return false");
+tickWeek();
+assert.strictEqual(builtEng.totalRoyalties, expectedWeeklyFee, "Unlicensed engine must stop earning royalties");
+
+console.log("=== TEST 38: Vacation Blocks Staff Training ===");
+resetTestState(1930, 'de');
+StudioState.cash = 50000;
+const staffMem = StudioState.staff[0];
+const skillBeforeVac = staffMem.skill;
+sendStaffVacation(staffMem.id);
+assert.strictEqual(staffMem.onVacationWeeks, 4);
+assert.strictEqual(trainStaffMember(staffMem.id), false, "trainStaffMember must return false while employee is on vacation");
+assert.strictEqual(staffMem.skill, skillBeforeVac, "Skill must not change when training is blocked");
+assert.strictEqual(StudioState.cash, 50000, "Cash must not be deducted when training is blocked");
+
+renderStaffList();
+const staffHtml = document.getElementById('current-staff-list').children.map(c => c.innerHTML).join('\n');
+assert.ok(/<button[^>]*disabled[^>]*onclick="trainStaffMember/.test(staffHtml), "Train button must be disabled in UI while staff is on vacation");
+
+for (let w = 0; w < 4; w++) tickWeek();
+assert.strictEqual(staffMem.onVacationWeeks, 0);
+assert.strictEqual(trainStaffMember(staffMem.id), true, "Training must succeed again once vacation ends");
+assert.strictEqual(staffMem.skill, skillBeforeVac + 1);
+
+console.log("=== TEST 39: Era-Gated Contracts (8 Contracts: 1930 vs 1972 vs 1985 vs 2000 vs 2016) ===");
+assert.strictEqual(CONTRACTS_CATALOG.length, 8, "CONTRACTS_CATALOG must contain 8 contracts");
+resetTestState(1930, 'de');
+assert.strictEqual(getAvailableContracts(1930).length, 4, "1930 must unlock 4 starter contracts");
+assert.strictEqual(getAvailableContracts(1971).length, 4, "1971 must still have 4 contracts");
+assert.strictEqual(acceptContract('arcade_soundchip'), false, "arcade_soundchip (1972) must be rejected in 1930");
+assert.strictEqual(StudioState.activeContract, null);
+assert.strictEqual(renderContractsModal().length, 4);
+assert.strictEqual(document.getElementById('contracts-list').children.length, 4, "Contracts modal in 1930 must display 4 contracts");
+
+assert.strictEqual(getAvailableContracts(1972).length, 5, "1972 must unlock 5th contract (arcade_soundchip)");
+assert.strictEqual(getAvailableContracts(1985).length, 6, "1985 must unlock 6th contract (cd_redbook_ost)");
+assert.strictEqual(getAvailableContracts(2000).length, 7, "2000 must unlock 7th contract (surround_cinema_mix)");
+assert.strictEqual(getAvailableContracts(2016).length, 8, "2016 must unlock all 8 contracts (vr_binaural_suite)");
+
+StudioState.year = 2016;
+assert.strictEqual(renderContractsModal().length, 8);
+assert.strictEqual(document.getElementById('contracts-list').children.length, 8, "Contracts modal in 2016 must display 8 contracts");
+assert.strictEqual(acceptContract('vr_binaural_suite'), true, "vr_binaural_suite must be acceptable in 2016");
+assert.strictEqual(StudioState.activeContract.id, 'vr_binaural_suite');
+assert.strictEqual(StudioState.activeContract.reward, 52000 * 2.5, "2016 contract must apply 2.5x era reward scaling");
+
+console.log("=== TEST 40: Annual Best Audio Design Award (Goldenes Mikrofon: score >= 75 && audioPts >= 80) ===");
+resetTestState(1980, 'de');
+StudioState.staff = [];
+StudioState.cash = 50000;
+StudioState.fans = 1000;
+// Game with score >= 75 but audioPts < 80 -> NO audio award
+StudioState.releasedGames.push({ id: 1, title: "Low Audio Game", year: 1980, score: 82, audioPts: 65 });
+StudioState.week = 48;
+tickWeek(); // advances to 1981 week 1
+assert.strictEqual(StudioState.year, 1981);
+assert.strictEqual(StudioState.audioDesignAwards.length, 0, "Game with audioPts < 80 must not win Best Audio Award");
+assert.strictEqual(StudioState.gotyAwards.length, 0, "Game with score < 85 must not win GOTY");
+
+// Game with score = 78 (>= 75, < 85) and audioPts = 95 (>= 80) -> wins Best Audio ONLY (+15,000 cash, +800 fans)
+StudioState.releasedGames.push({ id: 2, title: "Golden Ear Symphony", year: 1981, score: 78, audioPts: 95 });
+const cashBeforeAudioAward = StudioState.cash;
+const fansBeforeAudioAward = StudioState.fans;
+StudioState.week = 48;
+tickWeek(); // advances to 1982 week 1
+assert.strictEqual(StudioState.year, 1982);
+assert.strictEqual(StudioState.gotyAwards.length, 0, "Score 78 must not win GOTY");
+assert.strictEqual(StudioState.audioDesignAwards.length, 1, "Score >= 75 and audioPts >= 80 must win Best Audio Award");
+assert.strictEqual(StudioState.audioDesignAwards[0].title, "Golden Ear Symphony");
+assert.strictEqual(StudioState.fans, fansBeforeAudioAward + 800, "Best Audio Award must grant +800 fans");
+assert.strictEqual(StudioState.cash, cashBeforeAudioAward + 15000, "Best Audio Award must grant +15,000 EUR");
+
+// Game with score = 92 (>= 85) and audioPts = 130 (>= 80) -> wins BOTH GOTY and Best Audio Award
+StudioState.releasedGames.push({ id: 3, title: "Audio Magnum Opus", year: 1982, score: 92, audioPts: 130 });
+StudioState.week = 48;
+tickWeek(); // advances to 1983 week 1
+assert.strictEqual(StudioState.gotyAwards.length, 1, "Score 92 must win GOTY");
+assert.strictEqual(StudioState.audioDesignAwards.length, 2, "Score 92 & audioPts 130 must also win Best Audio Award");
+
+console.log("=== TEST 41: Complete DE/EN Key Parity & Zero Mojibake Across i18n, Data & HTML ===");
+const i18nSrc = fs.readFileSync('www/js/i18n.js', 'utf8');
+const gameDataSrc = fs.readFileSync('www/js/game_data.js', 'utf8');
+const htmlSrc = fs.readFileSync('www/index.html', 'utf8');
+const mojibakePatterns = ['Ã¼', 'Ã¶', 'Ã¤', 'ÃŸ', 'Ãœ', 'Ã–', 'Ã„', '\uFFFD'];
+[
+  ['www/js/i18n.js', i18nSrc],
+  ['www/js/game_data.js', gameDataSrc],
+  ['www/index.html', htmlSrc]
+].forEach(([fileLabel, content]) => {
+  mojibakePatterns.forEach(pat => {
+    assert.strictEqual(content.includes(pat), false, `Mojibake pattern "${pat}" found in ${fileLabel}`);
+  });
+});
+
+const deKeys = Object.keys(TRANSLATIONS.de);
+const enKeys = Object.keys(TRANSLATIONS.en);
+const missingInEn = deKeys.filter(k => !Object.prototype.hasOwnProperty.call(TRANSLATIONS.en, k));
+const missingInDe = enKeys.filter(k => !Object.prototype.hasOwnProperty.call(TRANSLATIONS.de, k));
+assert.deepStrictEqual(missingInEn, [], `Keys missing in EN: ${missingInEn.join(', ')}`);
+assert.deepStrictEqual(missingInDe, [], `Keys missing in DE: ${missingInDe.join(', ')}`);
+
+const requiredNewKeys = [
+  'audience_label', 'audience_everyone', 'audience_youth', 'audience_hardcore',
+  'audience_fit_perfect', 'audience_fit_neutral', 'audience_fit_mismatch',
+  'publisher_label', 'publisher_advance_short', 'publisher_royalty_short',
+  'publisher_reach_short', 'publisher_min_score_short',
+  'engine_license_btn', 'engine_unlicense_btn', 'engine_licensed_badge',
+  'engine_year_label', 'engine_licensed_announced', 'engine_unlicensed_announced',
+  'audio_award_name', 'audio_award_winner', 'best_audio_awards_label', 'goty_awards_label'
+];
+requiredNewKeys.forEach(key => {
+  assert.ok(typeof TRANSLATIONS.de[key] === 'string' && TRANSLATIONS.de[key].length > 0, `DE key ${key} must be non-empty`);
+  assert.ok(typeof TRANSLATIONS.en[key] === 'string' && TRANSLATIONS.en[key].length > 0, `EN key ${key} must be non-empty`);
+});
+
+console.log("=== TEST 42: Dev Modal UI Integration, Net Advance Cost & DE/EN Live Sync ===");
+resetTestState(1980, 'de');
+openDevModal();
+const selAud = document.getElementById('select-audience');
+const selPub = document.getElementById('select-publisher');
+const selPlat = document.getElementById('select-platform');
+const selTheme = document.getElementById('select-theme');
+const selGenre = document.getElementById('select-genre');
+assert.strictEqual(selAud.children.length, 3, "select-audience must populate 3 options");
+assert.strictEqual(selPub.children.length, 5, "select-publisher must populate 5 options");
+
+// Add Horror & Action if needed and select Horror + Action + hardcore + C64 (fee 0) + aetherwelle (advance 8000)
+if (!StudioState.unlockedTopics.includes('Horror')) StudioState.unlockedTopics.push('Horror');
+populateDevModalOptions();
+selTheme.value = 'Horror';
+selGenre.value = 'Action';
+selAud.value = 'hardcore';
+selPlat.value = 'C64';
+selPub.value = 'aetherwelle';
+updateDevSynergyPreview();
+
+const previewDe = document.getElementById('dev-synergy-preview').textContent;
+assert.ok(previewDe.includes('3/3'), "Horror + Action + Hardcore should show 3/3 combined synergy");
+assert.ok(previewDe.includes('Hardcore-Gamer'), "DE preview must localize audience name");
+const submitDeFree = document.getElementById('btn-submit-dev').textContent;
+assert.ok(submitDeFree.includes('Vorschuss'), "DE submit button must show publisher advance");
+
+// Verify Atari 2600 (70,000 fee + 5,000 base = 75,000) minus aetherwelle 8,000 advance = 67,000 net cost
+selPlat.value = 'Atari 2600';
+updateDevSynergyPreview();
+const submitDePaid = document.getElementById('btn-submit-dev').textContent;
+assert.ok(submitDePaid.includes('67.000'), "DE submit button must reflect net cost 67.000 EUR after 8.000 advance");
+
+// Switch to English and check live UI sync
+toggleLanguage();
+assert.strictEqual(StudioState.language, 'en');
+assert.ok(selAud.innerHTML.includes('Hardcore Gamers'), "Audience options must localize to EN on toggleLanguage()");
+assert.ok(document.getElementById('dev-synergy-preview').textContent.includes('Hardcore Gamers'), "Synergy preview must sync to EN");
+assert.ok(document.getElementById('btn-submit-dev').textContent.includes('Advance'), "Submit button must sync to EN");
+assert.ok(document.getElementById('hud-era').textContent.includes('8-Bit & Home Computer Boom'), "HUD era must sync to EN");
+assert.ok(document.getElementById('timeline-current-era-text').textContent.includes('8-Bit & Home Computer Boom'), "Timeline era text must sync to EN");
+toggleLanguage(); // back to 'de'
+closeDevModal();
+
+console.log("=== TEST 43: HTML DOM Structure & TalkBack Accessibility Contract ===");
+const idxAud = htmlSrc.indexOf('id="select-audience"');
+const idxPub = htmlSrc.indexOf('id="select-publisher"');
+const idxSeq = htmlSrc.indexOf('id="select-sequel"');
+assert(idxAud > 0 && idxPub > 0 && idxSeq > 0, "index.html must contain select-audience, select-publisher, and select-sequel");
+assert(idxAud < idxSeq && idxPub < idxSeq, "select-audience and select-publisher must appear before select-sequel in #modal-dev");
+assert.ok(htmlSrc.includes('for="select-audience"') && htmlSrc.includes('for="select-publisher"'), "New selects must have matching labels");
+assert.ok(htmlSrc.includes('id="dev-synergy-preview"') && htmlSrc.includes('aria-live="polite"'), "Live regions must have aria-live='polite'");
+assert.ok(htmlSrc.includes('id="sr-announcer"') && htmlSrc.includes('id="sr-polite"'), "Screenreader live regions must be present");
+
+console.log("\nALL 43 SIMULATION, TYCOON LOOP & TIMELINE INTEGRATION TESTS PASSED 100%!");
 process.exit(0);
 

@@ -54,6 +54,45 @@ function manualTickWeek() {
   }
 }
 
+function getSimGlobalValue(name, fallback) {
+  if (typeof window !== 'undefined' && window[name] !== undefined) return window[name];
+  if (typeof global !== 'undefined' && global[name] !== undefined) return global[name];
+  return fallback;
+}
+
+function getAvailableContracts(year) {
+  const y = (year !== undefined && year !== null) ? Number(year) : (StudioState ? StudioState.year : 1930);
+  const catalog = (typeof CONTRACTS_CATALOG !== 'undefined' && Array.isArray(CONTRACTS_CATALOG))
+    ? CONTRACTS_CATALOG
+    : getSimGlobalValue('CONTRACTS_CATALOG', []);
+  return catalog.filter(c => (c.unlockYear || 1930) <= y);
+}
+
+function renderContractsModal() {
+  if (typeof renderContractsList === 'function') {
+    renderContractsList();
+  }
+  return getAvailableContracts(StudioState ? StudioState.year : 1930);
+}
+
+function getLabelRoyaltyMultiplier() {
+  const techIds = (StudioState && Array.isArray(StudioState.unlockedTech)) ? StudioState.unlockedTech : [];
+  const catalog = (typeof RESEARCH_CATALOG !== 'undefined' && Array.isArray(RESEARCH_CATALOG))
+    ? RESEARCH_CATALOG
+    : getSimGlobalValue('RESEARCH_CATALOG', []);
+  let bonusPct = 0;
+  techIds.forEach(id => {
+    const tech = catalog.find(t => t.id === id);
+    if (tech && tech.effect && tech.effect.labelRoyaltyPct) {
+      bonusPct += tech.effect.labelRoyaltyPct;
+    } else if (!tech) {
+      if (id === 'vinyl_mastering') bonusPct += 15;
+      else if (id === 'ai_composition') bonusPct += 35;
+    }
+  });
+  return 1 + (bonusPct / 100);
+}
+
 function acceptContract(contractId) {
   const isEn = StudioState.language === 'en';
   if (StudioState.activeContract) {
@@ -63,9 +102,25 @@ function acceptContract(contractId) {
     }
     return false;
   }
-  const catalog = (typeof CONTRACTS_CATALOG !== 'undefined') ? CONTRACTS_CATALOG : [];
-  const spec = catalog.find(c => c.id === contractId) || catalog[0];
+  const catalog = (typeof CONTRACTS_CATALOG !== 'undefined' && Array.isArray(CONTRACTS_CATALOG))
+    ? CONTRACTS_CATALOG
+    : getSimGlobalValue('CONTRACTS_CATALOG', []);
+  const spec = contractId
+    ? catalog.find(c => c.id === contractId)
+    : getAvailableContracts(StudioState.year)[0];
   if (!spec) return false;
+
+  const unlockYear = spec.unlockYear || 1930;
+  if (StudioState.year < unlockYear) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      const cName = isEn ? (spec.name_en || spec.name) : spec.name;
+      AudioEngine.speak(isEn
+        ? `Contract "${cName}" is locked until ${unlockYear}!`
+        : `Auftrag "${cName}" ist erst ab Jahr ${unlockYear} verfügbar!`);
+    }
+    return false;
+  }
 
   const eraScale = (StudioState.year >= 1990) ? 2.5 : (StudioState.year >= 1970 ? 1.6 : 1.0);
   const scaledReward = Math.round((spec.reward * eraScale) / 100) * 100;
@@ -417,8 +472,7 @@ function tickWeek() {
   const isLabelUnlocked = (typeof isFeatureUnlocked === 'function') ? isFeatureUnlocked('soundtrack_label', StudioState.year) : (StudioState.year >= 1985);
   if (isLabelUnlocked && StudioState.soundtrackLabel && StudioState.soundtrackLabel.length > 0) {
     let passiveRoyalties = 0;
-    const hasAITech = StudioState.unlockedTech && StudioState.unlockedTech.includes('ai_composition');
-    const royaltyMultiplier = hasAITech ? 1.35 : 1.0;
+    const royaltyMultiplier = getLabelRoyaltyMultiplier();
 
     StudioState.soundtrackLabel.forEach(track => {
       const weeklyEarn = Math.round(track.revenuePerWeek * royaltyMultiplier);
@@ -429,6 +483,21 @@ function tickWeek() {
 
     if (passiveRoyalties > 0) {
       StudioState.cash += passiveRoyalties;
+    }
+  }
+
+  // 1b. Passive Weekly Royalties from Licensed Custom Engines
+  if (Array.isArray(StudioState.customEngines)) {
+    let engineRoyalties = 0;
+    StudioState.customEngines.forEach(eng => {
+      if (eng && eng.licensedOut === true) {
+        const weeklyFee = 350 * (eng.techBonus || 5);
+        engineRoyalties += weeklyFee;
+        eng.totalRoyalties = (eng.totalRoyalties || 0) + weeklyFee;
+      }
+    });
+    if (engineRoyalties > 0) {
+      StudioState.cash += engineRoyalties;
     }
   }
 
@@ -492,21 +561,29 @@ function tickWeek() {
   if (typeof updateHUD === 'function') updateHUD();
 }
 
-if (typeof window !== 'undefined') {
-  window.startWeeklyLoop = startWeeklyLoop;
-  window.togglePause = togglePause;
-  window.setGameSpeed = setGameSpeed;
-  window.manualTickWeek = manualTickWeek;
-  window.acceptContract = acceptContract;
-  window.tickContractProgress = tickContractProgress;
-  window.upgradeStudioOffice = upgradeStudioOffice;
-  window.processAnnualTransition = processAnnualTransition;
-  window.tickWeek = tickWeek;
-}
+[
+  typeof window !== 'undefined' ? window : null,
+  typeof global !== 'undefined' ? global : null
+].forEach(target => {
+  if (!target) return;
+  target.startWeeklyLoop = startWeeklyLoop;
+  target.togglePause = togglePause;
+  target.setGameSpeed = setGameSpeed;
+  target.manualTickWeek = manualTickWeek;
+  target.getAvailableContracts = getAvailableContracts;
+  target.renderContractsModal = renderContractsModal;
+  target.getLabelRoyaltyMultiplier = getLabelRoyaltyMultiplier;
+  target.acceptContract = acceptContract;
+  target.tickContractProgress = tickContractProgress;
+  target.upgradeStudioOffice = upgradeStudioOffice;
+  target.processAnnualTransition = processAnnualTransition;
+  target.tickWeek = tickWeek;
+});
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     startWeeklyLoop, togglePause, setGameSpeed, manualTickWeek,
+    getAvailableContracts, renderContractsModal, getLabelRoyaltyMultiplier,
     acceptContract, tickContractProgress, upgradeStudioOffice,
     processAnnualTransition, tickWeek
   };

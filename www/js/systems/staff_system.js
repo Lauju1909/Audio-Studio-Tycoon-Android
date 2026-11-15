@@ -58,13 +58,13 @@ function renderStaffList() {
         </span>
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" ${emp.skill >= 10 ? 'disabled' : ''} onclick="trainStaffMember(${emp.id})">
+        <button type="button" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" ${(emp.skill >= 10 || isVacation) ? 'disabled' : ''} onclick="trainStaffMember(${emp.id})">
           🎓 ${isEn ? 'Train (2,500)' : 'Schulen (2.500 €)'}
         </button>
-        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" ${isVacation ? 'disabled' : ''} onclick="sendStaffVacation(${emp.id})">
+        <button type="button" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" ${isVacation ? 'disabled' : ''} onclick="sendStaffVacation(${emp.id})">
           🏖️ ${isEn ? 'Vacation' : 'Urlaub'}
         </button>
-        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; color: var(--red);" onclick="fireStaff(${emp.id})">
+        <button type="button" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; color: var(--red);" onclick="fireStaff(${emp.id})">
           ❌ ${isEn ? 'Fire' : 'Feuern'}
         </button>
       </div>
@@ -77,6 +77,15 @@ function trainStaffMember(empId) {
   const emp = StudioState.staff.find(e => e.id === empId);
   if (!emp) return false;
   const isEn = StudioState.language === 'en';
+  if ((emp.onVacationWeeks || 0) > 0) {
+    if (typeof AudioEngine !== 'undefined') {
+      AudioEngine.playSound('error');
+      AudioEngine.speak(isEn
+        ? `${emp.name} is currently on vacation and cannot attend training!`
+        : `${emp.name} ist derzeit im Urlaub und kann nicht an einer Schulung teilnehmen!`);
+    }
+    return false;
+  }
   const cost = 2500;
   if (emp.skill >= 10) return false;
   if (StudioState.cash < cost) {
@@ -158,9 +167,12 @@ function hireNewCandidate(role) {
   renderStaffList();
   if (typeof AudioEngine !== 'undefined') {
     AudioEngine.playSound('confirm');
+    const roleLabel = isEn
+      ? (role === 'sound' ? 'Sound Designer' : (role === 'coder' ? 'Programmer' : 'Writer'))
+      : (role === 'sound' ? 'Audio-Designer' : (role === 'coder' ? 'Programmierer' : 'Autor'));
     AudioEngine.speak(t('hired_success', {
       name: randomName,
-      role: role === 'sound' ? 'Audio-Designer' : (role === 'coder' ? 'Programmierer' : 'Autor'),
+      role: roleLabel,
       salary: formatMoney(salary)
     }));
   }

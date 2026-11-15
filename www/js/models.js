@@ -63,7 +63,7 @@ function createDefaultState(startYear = 1930) {
     gameSpeed: 1,
     eventLog: [],
     customEngines: [
-      { id: 'engine_basic_1', name: 'Monophonic 8-Bit Engine', features: ['basic_audio'], audioBonus: 5, techBonus: 5, bugReduction: 0 }
+      { id: 'engine_basic_1', name: 'Monophonic 8-Bit Engine', features: ['basic_audio'], audioBonus: 5, techBonus: 5, bugReduction: 0, createdYear: initYear, licensedOut: false, totalRoyalties: 0 }
     ],
     staff: [
       { id: 1, name: "Max Melodie", role: "sound", salary: 1500, skill: 2, fatigue: 0, morale: 100, onVacationWeeks: 0 }
@@ -73,6 +73,7 @@ function createDefaultState(startYear = 1930) {
     releasedGames: [],
     soundtrackLabel: [],
     gotyAwards: [],
+    audioDesignAwards: [],
     isTimerRunning: true,
     isPaused: false,
     isGameOver: false,
@@ -122,4 +123,13 @@ if (typeof window !== 'undefined') {
   window.StudioState = StudioState;
   window.formatMoney = formatMoney;
   window.getMaxLoan = getMaxLoan;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    createDefaultState,
+    StudioState,
+    formatMoney,
+    getMaxLoan
+  };
 }

@@ -26,10 +26,28 @@ const GENRE_IDEAL_SLIDERS = {
 };
 
 const CONTRACTS_CATALOG = [
-  { id: 'jingle_radio', name: 'Radio-Jingle & Stationskennung', name_en: 'Radio Jingle & Station ID', reward: 4500, penalty: 1000, requiredPoints: 35, weeks: 3, category: 'Sound' },
-  { id: 'foley_drama', name: 'Hörspiel-Geräuschkulisse (Foley)', name_en: 'Audio Drama Foley Soundscape', reward: 7500, penalty: 1800, requiredPoints: 55, weeks: 4, category: 'Sound' },
-  { id: 'signal_filter', name: 'Frequenzweiche & Signal-Optimierung', name_en: 'Signal Filter & Logic Optimization', reward: 10500, penalty: 2500, requiredPoints: 75, weeks: 4, category: 'Code' },
-  { id: 'mastering_vinyl', name: 'Orchester- & Tonträger-Mastering', name_en: 'Orchestra & Record Mastering', reward: 16000, penalty: 3500, requiredPoints: 110, weeks: 5, category: 'Mastering' }
+  { id: 'jingle_radio', name: 'Radio-Jingle & Stationskennung', name_en: 'Radio Jingle & Station ID', unlockYear: 1930, reward: 4500, penalty: 1000, requiredPoints: 35, weeks: 3, category: 'Sound' },
+  { id: 'foley_drama', name: 'Hörspiel-Geräuschkulisse (Foley)', name_en: 'Audio Drama Foley Soundscape', unlockYear: 1930, reward: 7500, penalty: 1800, requiredPoints: 55, weeks: 4, category: 'Sound' },
+  { id: 'signal_filter', name: 'Frequenzweiche & Signal-Optimierung', name_en: 'Signal Filter & Logic Optimization', unlockYear: 1930, reward: 10500, penalty: 2500, requiredPoints: 75, weeks: 4, category: 'Code' },
+  { id: 'mastering_vinyl', name: 'Orchester- & Tonträger-Mastering', name_en: 'Orchestra & Record Mastering', unlockYear: 1930, reward: 16000, penalty: 3500, requiredPoints: 110, weeks: 5, category: 'Mastering' },
+  { id: 'arcade_soundchip', name: 'Arcade-Soundchip & Münzautomat-SFX', name_en: 'Arcade Soundchip & Coin-Op SFX', unlockYear: 1972, reward: 14000, penalty: 3500, requiredPoints: 130, weeks: 5, category: 'Sound' },
+  { id: 'cd_redbook_ost', name: 'CD-Redbook Soundtrack & Studio-Mix', name_en: 'CD-Redbook Soundtrack & Studio Mix', unlockYear: 1985, reward: 22000, penalty: 5500, requiredPoints: 180, weeks: 6, category: 'Mastering' },
+  { id: 'surround_cinema_mix', name: '5.1 Surround-Kino & AAA-Abmischung', name_en: '5.1 Surround Cinema & AAA Mix', unlockYear: 2000, reward: 35000, penalty: 9000, requiredPoints: 260, weeks: 6, category: 'Mastering' },
+  { id: 'vr_binaural_suite', name: 'VR Binaural Spatial-Audio Suite', name_en: 'VR Binaural Spatial Audio Suite', unlockYear: 2016, reward: 52000, penalty: 13000, requiredPoints: 340, weeks: 7, category: 'Code' }
+];
+
+const AUDIENCE_CATALOG = [
+  { id: 'everyone', name: 'Jeder', name_en: 'Everyone', desc: 'Breite Zielgruppe für Familie, Musik, Puzzle und Klassik', desc_en: 'Broad family, music, puzzle and classic audience' },
+  { id: 'youth', name: 'Jugendliche', name_en: 'Youth & Teens', desc: 'Trends, Action, Popkultur, Sport und Streaming', desc_en: 'Trends, action, pop culture, sports and streaming' },
+  { id: 'hardcore', name: 'Hardcore-Gamer', name_en: 'Hardcore Gamers', desc: 'Tiefe Taktik, komplexe Rollenspiele, Horror und Sci-Fi', desc_en: 'Deep strategy, complex RPGs, horror and dark sci-fi' }
+];
+
+const PUBLISHERS_CATALOG = [
+  { id: 'self_pub', name: 'Eigenverlag (Indie)', name_en: 'Self-Published (Indie)', advance: 0, royaltyCut: 0, reachMulti: 1.0, minScore: 0 },
+  { id: 'aetherwelle', name: 'Aetherwelle Distribution', name_en: 'Aetherwave Distribution', advance: 8000, royaltyCut: 25, reachMulti: 1.25, minScore: 55 },
+  { id: 'polyphonie', name: 'Polyphonie Verlag', name_en: 'Polyphony Publishing', advance: 22000, royaltyCut: 30, reachMulti: 1.45, minScore: 68 },
+  { id: 'global_sonic', name: 'Global Sonic Records', name_en: 'Global Sonic Records', advance: 60000, royaltyCut: 35, reachMulti: 1.75, minScore: 78 },
+  { id: 'omnimedia', name: 'OmniMedia Megacorp', name_en: 'OmniMedia Megacorp', advance: 150000, royaltyCut: 40, reachMulti: 2.15, minScore: 85 }
 ];
 
 const OFFICE_UPGRADES_CATALOG = [
@@ -87,14 +105,60 @@ function getIdealSlidersForGenre(genre) {
   return GENRE_IDEAL_SLIDERS[genre] || { gameplay: 70, sound: 75 };
 }
 
+/**
+ * Evaluates target audience compatibility for a theme + genre combination.
+ * Returns 3 (perfect fit), 2 (neutral), or 1 (mismatch).
+ */
+function getAudienceCompatibility(theme, genre, audience) {
+  const t = String(theme || '').toLowerCase();
+  const g = String(genre || '').toLowerCase();
+  const a = audience ? String(audience).toLowerCase() : 'everyone';
+
+  const isHardcoreTheme = /horror|cyberpunk|zombie|vampir|monster|militär|krieg|panzer|u-boot|fallschirm|mafia|hacking|postapokalypse|endzeit|dystopie|mars-shooter|mechs|stealth|krypto|deepfake|neuro|neural|skandal|e-sport|battle-royale|kryptografie|spionage|verliese|wikinger|ninja/i.test(t);
+  const isHardcoreGenre = g === 'strategy' || g === 'strategie' || g === 'horror' || g === 'kampfspiel';
+  const isEveryoneTheme = /swing|casual|kochen|zirkus|abakus|schach|mathematik|logistik|radio-drama|hörspiel|hörbuch|landwirtschaft|farming|freizeitpark|themenpark|vergnügungspark|frieden|natur|lernen|brettspiel|karten|eisenbahn|seefahrt|detektiv|vinyl|transistor|kassette|cd-tech|fußball|tennis|leichtathletik|(?:\bsport\b)|klempner|fresspunkte|taschenmonster|sandbox|block-bauen|lebens-sim|mode|puppen|hörgeräte|lo-fi|asmr|architektur|postwesen|wiederaufbau/i.test(t);
+  const isEveryoneGenre = g === 'casual' || g === 'puzzle' || g === 'sport';
+  const isYouthTheme = /rock|pop|band|elektronik-pop|breakdance|techno|soundcloud|auto-tune|walkman|mp3|streaming|social|smartphone|wireless|anime|taschenmonster|skate|freerun|basketball|rennwagen|motorrad|laserschwert|invader|ninja|pirat|dino|wilder westen|zauber|agent|e-sport|battle-royale|ar-jagd|metaverse|holo|scifi|cyberpunk|fantasy|retro|ufo|aliens|mars|roboter/i.test(t);
+  const isYouthGenre = g === 'action' || g === 'rennspiel' || g === 'sport' || g === 'kampfspiel' || g === 'abenteuer';
+  const isYouthDryMismatch = /abakus|mathematik|logistik|postwesen|bergbau|büro-alltag|parkplatz|wiederaufbau|hörgeräte|politik|landwirtschaft|journalismus/i.test(t);
+
+  if (a === 'hardcore') {
+    const isCasualLifestyle = /kochen|zirkus|mode|puppen|farming|swing|popstars|klempner|fresspunkte|lernen|lebens-sim|asmr|lo-fi|hörgeräte/i.test(t);
+    if (g === 'casual' || (isCasualLifestyle && !isHardcoreGenre)) return 1;
+    if (isHardcoreTheme || isHardcoreGenre || g === 'rpg') return 3;
+    return 2;
+  }
+
+  if (a === 'everyone') {
+    if (isHardcoreTheme || isHardcoreGenre) return 1;
+    if ((isEveryoneTheme && !/e-sport/i.test(t)) || isEveryoneGenre) return 3;
+    return 2;
+  }
+
+  if (a === 'youth') {
+    if (isYouthDryMismatch && g !== 'action' && g !== 'rennspiel') return 1;
+    if (isYouthTheme || isYouthGenre) return 3;
+    return 2;
+  }
+
+  return 2;
+}
+
 const RESEARCH_CATALOG = [
-  { id: 'chiptune', name: 'Synthesizer Chiptune Modul', cost: 15, year: 1980, desc: '+20% Audio-Punkte bei Retro- & Cyberpunk-Titeln', effect: { audioPct: 20, themes: ['Retro', 'Cyberpunk'] , name_en: "Synthesizer Chiptune Module", desc_en: "+20% Audio Points for Retro & Cyberpunk titles"} },
-  { id: 'polyphonic', name: 'Polyphone Sound-Synthese', cost: 25, year: 1982, desc: 'Schaltet mehrstimmige Audio-Spuren für alle Genres frei (+15 Audio)', effect: { flatAudio: 15 , name_en: "Polyphonic Sound Synthesis", desc_en: "Unlocks multi-channel audio tracks for all genres (+15 Audio)"} },
-  { id: 'dsp_effects', name: 'DSP-Effektprozessor (Reverb/Chorus)', cost: 40, year: 1985, desc: 'Erhöht Audio-Punkte um 20% und senkt Bug-Rate um 20%', effect: { audioPct: 20, bugReduction: 0.20 , name_en: "DSP Effects Processor (Reverb/Chorus)", desc_en: "Increases Audio Points by 20% and reduces bug rate by 20%"} },
-  { id: 'surround_51', name: '5.1 Surround Sound System', cost: 60, year: 1992, desc: 'Enormer Hype- und Wertungsbonus bei Action & Horror (+15%)', effect: { scorePct: 15, genres: ['Action', 'Horror'] , name_en: "5.1 Surround Sound System", desc_en: "Huge hype and score bonus for Action & Horror (+15%)"} },
-  { id: 'binaural_3d', name: 'Binaurale 3D-Audio-Engine', cost: 80, year: 2000, desc: 'Kopfhörer-Raumklang für Screenreader & Gamer (+30% Audio & +50% Fans)', effect: { audioPct: 30, fanMultiplier: 1.5 , name_en: "Binaural 3D Audio Engine", desc_en: "3D spatial headphone audio for screenreaders & gamers (+30% Audio & +50% Fans)"} },
-  { id: 'ai_composition', name: 'KI-Prozedurale Soundtrack-Engine', cost: 120, year: 2015, desc: 'Beschleunigt Entwicklung um 25% und erhöht Soundtrack-Tantiemen um 35%', effect: { speedBoost: 0.25, labelRoyaltyPct: 35 , name_en: "AI Procedural Soundtrack Engine", desc_en: "Speeds up dev by 25% and boosts soundtrack royalties by 35%"} },
-  { id: 'raytracing_audio', name: 'Echtzeit-Acoustic Raytracing', cost: 160, year: 2020, desc: 'Physikalisch korrekte Schallwellen-Berechnung (+25 Gesamt-Wertungspunkte)', effect: { flatScore: 25 , name_en: "Realtime Acoustic Raytracing", desc_en: "Physically accurate soundwave calculation (+25 total review score points)"} }
+  { id: 'acoustic_isolation', name: 'Schalldämmung & Studio-Kabinen', name_en: 'Soundproof Booths & Isolation', cost: 10, year: 1930, desc: 'Isolierte Aufnahmekabinen erhöhen Audio-Qualität für alle Genres (+10 Audio)', desc_en: 'Isolated recording booths raise audio quality across all genres (+10 Audio)', effect: { flatAudio: 10 } },
+  { id: 'magnetic_tape', name: 'Magnetband-Aufnahme', name_en: 'Magnetic Tape Recording', cost: 15, year: 1938, desc: 'Analoges Tonband verbessert Klangtreue (+15% Audio) und senkt Fehlerquote (-10% Bugs)', desc_en: 'Analog magnetic tape improves audio fidelity (+15% Audio) and reduces defects (-10% Bugs)', effect: { audioPct: 15, bugReduction: 0.10 } },
+  { id: 'vinyl_mastering', name: 'Vinyl-Schneidemaschine & Hi-Fi Mastering', name_en: 'Vinyl Cutting & Hi-Fi Mastering', cost: 20, year: 1948, desc: 'Präzises Mastering erhöht Audio-Punkte (+10 Audio) und Soundtrack-Tantiemen (+15%)', desc_en: 'Precision mastering boosts Audio Points (+10 Audio) and soundtrack royalties (+15%)', effect: { labelRoyaltyPct: 15, flatAudio: 10 } },
+  { id: 'stereo_panning', name: 'Stereo-Panorama-Mischpult', name_en: 'Stereo Panning Console', cost: 25, year: 1958, desc: 'Zweikanal-Mischung verleiht Soundtracks räumliche Breite (+15% Audio)', desc_en: 'Dual-channel mixing adds spatial depth to soundtracks (+15% Audio)', effect: { audioPct: 15 } },
+  { id: 'moog_modular', name: 'Analoger Modular-Synthesizer', name_en: 'Analog Modular Synthesizer', cost: 30, year: 1968, desc: 'Spannungsgesteuerte Klangsynthese begeistert Kritiker (+10% Gesamtwertung)', desc_en: 'Voltage-controlled synthesis impresses critics (+10% review score)', effect: { scorePct: 10 } },
+  { id: 'pcm_digital', name: 'PCM Digital-Audio Sampling', name_en: 'PCM Digital Audio Sampling', cost: 35, year: 1975, desc: 'Puls-Code-Modulation liefert klaren Digital-Sound (+15 Audio, -15% Bugs)', desc_en: 'Pulse-code modulation delivers crisp digital sound (+15 Audio, -15% Bugs)', effect: { flatAudio: 15, bugReduction: 0.15 } },
+  { id: 'chiptune', name: 'Synthesizer Chiptune Modul', name_en: 'Synthesizer Chiptune Module', cost: 15, year: 1980, desc: '+20% Audio-Punkte bei Retro- & Cyberpunk-Titeln', desc_en: '+20% Audio Points for Retro & Cyberpunk titles', effect: { audioPct: 20, themes: ['Retro', 'Cyberpunk'] } },
+  { id: 'polyphonic', name: 'Polyphone Sound-Synthese', name_en: 'Polyphonic Sound Synthesis', cost: 25, year: 1982, desc: 'Schaltet mehrstimmige Audio-Spuren für alle Genres frei (+15 Audio)', desc_en: 'Unlocks multi-channel audio tracks for all genres (+15 Audio)', effect: { flatAudio: 15 } },
+  { id: 'dsp_effects', name: 'DSP-Effektprozessor (Reverb/Chorus)', name_en: 'DSP Effects Processor (Reverb/Chorus)', cost: 40, year: 1985, desc: 'Erhöht Audio-Punkte um 20% und senkt Bug-Rate um 20%', desc_en: 'Increases Audio Points by 20% and reduces bug rate by 20%', effect: { audioPct: 20, bugReduction: 0.20 } },
+  { id: 'surround_51', name: '5.1 Surround Sound System', name_en: '5.1 Surround Sound System', cost: 60, year: 1992, desc: 'Enormer Hype- und Wertungsbonus bei Action & Horror (+15%)', desc_en: 'Huge hype and score bonus for Action & Horror (+15%)', effect: { scorePct: 15, genres: ['Action', 'Horror'] } },
+  { id: 'binaural_3d', name: 'Binaurale 3D-Audio-Engine', name_en: 'Binaural 3D Audio Engine', cost: 80, year: 2000, desc: 'Kopfhörer-Raumklang für Screenreader & Gamer (+30% Audio & +50% Fans)', desc_en: '3D spatial headphone audio for screenreaders & gamers (+30% Audio & +50% Fans)', effect: { audioPct: 30, fanMultiplier: 1.5 } },
+  { id: 'ai_composition', name: 'KI-Prozedurale Soundtrack-Engine', name_en: 'AI Procedural Soundtrack Engine', cost: 120, year: 2015, desc: 'Beschleunigt Entwicklung um 25% und erhöht Soundtrack-Tantiemen um 35%', desc_en: 'Speeds up dev by 25% and boosts soundtrack royalties by 35%', effect: { speedBoost: 0.25, labelRoyaltyPct: 35 } },
+  { id: 'raytracing_audio', name: 'Echtzeit-Acoustic Raytracing', name_en: 'Realtime Acoustic Raytracing', cost: 160, year: 2020, desc: 'Physikalisch korrekte Schallwellen-Berechnung (+25 Gesamt-Wertungspunkte)', desc_en: 'Physically accurate soundwave calculation (+25 total review score points)', effect: { flatScore: 25 } },
+  { id: 'neural_acoustics', name: 'Neuronale Echtzeit-Akustik', name_en: 'Neural Realtime Acoustics', cost: 180, year: 2024, desc: 'KI-gestützte Wellenfeld-Synthese für perfekte Raumakustik (+30 Wertung, +35% Audio)', desc_en: 'AI-powered wavefield synthesis for flawless room acoustics (+30 Score, +35% Audio)', effect: { flatScore: 30, audioPct: 35 } }
 ];
 
 const RANDOM_TITLES = {
@@ -2227,10 +2291,13 @@ if (typeof window !== 'undefined') {
   window.getAvailableTopics = getAvailableTopics;
   window.GENRE_IDEAL_SLIDERS = GENRE_IDEAL_SLIDERS;
   window.CONTRACTS_CATALOG = CONTRACTS_CATALOG;
+  window.AUDIENCE_CATALOG = AUDIENCE_CATALOG;
+  window.PUBLISHERS_CATALOG = PUBLISHERS_CATALOG;
   window.OFFICE_UPGRADES_CATALOG = OFFICE_UPGRADES_CATALOG;
   window.getSynergyMultiplier = getSynergyMultiplier;
   window.getCompatibilityStars = getCompatibilityStars;
   window.getIdealSlidersForGenre = getIdealSlidersForGenre;
+  window.getAudienceCompatibility = getAudienceCompatibility;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -2240,7 +2307,8 @@ if (typeof module !== 'undefined' && module.exports) {
     HISTORICAL_TOPICS, getCurrentEra, getAvailablePlatforms, getNewlyUnlockedPlatforms,
     getNewlyRetiredPlatforms, getNewlyUnlockedFeatures, isFeatureUnlocked,
     getYearEvent, getNewlyUnlockedTopics, getAvailableTopics,
-    GENRE_IDEAL_SLIDERS, CONTRACTS_CATALOG, OFFICE_UPGRADES_CATALOG,
-    getSynergyMultiplier, getCompatibilityStars, getIdealSlidersForGenre
+    GENRE_IDEAL_SLIDERS, CONTRACTS_CATALOG, AUDIENCE_CATALOG, PUBLISHERS_CATALOG,
+    OFFICE_UPGRADES_CATALOG, getSynergyMultiplier, getCompatibilityStars,
+    getIdealSlidersForGenre, getAudienceCompatibility
   };
 }
